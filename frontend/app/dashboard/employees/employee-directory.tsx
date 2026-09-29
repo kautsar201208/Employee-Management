@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { Eye, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ACCESS_TOKEN_KEY, getEmployeeById, getEmployees, type ApiEmployee } from "@/lib/api";
+
+const EMPLOYEES_PER_PAGE = 25;
 
 type EmployeeRow = {
   key: string;
@@ -43,6 +45,7 @@ export default function EmployeeDirectory() {
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("all");
   const [status, setStatus] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -95,7 +98,7 @@ export default function EmployeeDirectory() {
     [employeeRows],
   );
 
-  const visibleEmployees = employeeRows.filter((employee) => {
+  const filteredEmployees = employeeRows.filter((employee) => {
     const searchable = `${employee.name} ${employee.id} ${employee.email} ${employee.role} ${employee.department}`.toLowerCase();
     return (
       searchable.includes(query.trim().toLowerCase()) &&
@@ -104,12 +107,25 @@ export default function EmployeeDirectory() {
     );
   });
 
+  const totalPages = Math.ceil(filteredEmployees.length / EMPLOYEES_PER_PAGE);
+  const activePage = Math.min(currentPage, Math.max(totalPages, 1));
+  const firstEmployeeIndex = (activePage - 1) * EMPLOYEES_PER_PAGE;
+  const visibleEmployees = filteredEmployees.slice(firstEmployeeIndex, firstEmployeeIndex + EMPLOYEES_PER_PAGE);
+  const firstVisiblePage = Math.max(1, Math.min(activePage - 2, totalPages - 4));
+  const lastVisiblePage = Math.min(totalPages, firstVisiblePage + 4);
+  const pageNumbers: number[] = [];
+
+  for (let pageNumber = firstVisiblePage; pageNumber <= lastVisiblePage; pageNumber += 1) {
+    pageNumbers.push(pageNumber);
+  }
+
   const filtersActive = query.trim() !== "" || department !== "all" || status !== "all";
   const employmentType = (employee: EmployeeRow) => employee.status.toLowerCase();
   const permanentCount = employeeRows.filter((employee) => /tetap|pns|pppk/.test(employmentType(employee))).length;
   const contractCount = employeeRows.filter((employee) => /kontrak|pkwt/.test(employmentType(employee))).length;
   const internCount = employeeRows.filter((employee) => /magang|intern/.test(employmentType(employee))).length;
   const percentage = (count: number) => employeeRows.length ? `${(count / employeeRows.length * 100).toFixed(1)}% dari total` : "0% dari total";
+
   const cardVariants = {
     hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 8 },
     visible: {
@@ -130,6 +146,7 @@ export default function EmployeeDirectory() {
     setQuery("");
     setDepartment("all");
     setStatus("all");
+    setCurrentPage(1);
   }
 
   async function viewEmployeeProfile(employee: EmployeeRow) {
@@ -160,7 +177,7 @@ export default function EmployeeDirectory() {
 
   function exportEmployees() {
     const headers = ["ID Karyawan", "Nama", "Email", "Jabatan", "Departemen", "Status", "Tanggal Bergabung"];
-    const rows = visibleEmployees.map((employee) => [employee.id, employee.name, employee.email, employee.role, employee.department, employee.status, employee.joined]);
+    const rows = filteredEmployees.map((employee) => [employee.id, employee.name, employee.email, employee.role, employee.department, employee.status, employee.joined]);
     const csv = [headers, ...rows]
       .map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(","))
       .join("\r\n");
@@ -198,25 +215,40 @@ export default function EmployeeDirectory() {
       <div className="employees-toolbar">
         <div className="employees-filter-group">
           <label className="employees-search">
-          <span aria-hidden="true">⌕</span>
-          <input
-            aria-label="Cari karyawan"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Cari nama atau ID karyawan..."
-            type="search"
-            value={query}
-          />
+            <span aria-hidden="true">⌕</span>
+            <input
+              aria-label="Cari karyawan"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Cari nama atau ID karyawan..."
+              type="search"
+              value={query}
+            />
           </label>
           <label className="employees-select">
             <span className="visually-hidden">Filter departemen</span>
-            <select onChange={(event) => setDepartment(event.target.value)} value={department}>
+            <select
+              onChange={(event) => {
+                setDepartment(event.target.value);
+                setCurrentPage(1);
+              }}
+              value={department}
+            >
               <option value="all">Semua Departemen</option>
               {departments.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
           <label className="employees-select">
             <span className="visually-hidden">Filter status</span>
-            <select onChange={(event) => setStatus(event.target.value)} value={status}>
+            <select
+              onChange={(event) => {
+                setStatus(event.target.value);
+                setCurrentPage(1);
+              }}
+              value={status}
+            >
               <option value="all">Semua Status</option>
               {statuses.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
@@ -269,9 +301,45 @@ export default function EmployeeDirectory() {
           </table>
         </div>
         <footer className="employees-table-footer">
-          <span>Menampilkan <strong>{visibleEmployees.length}</strong> dari <strong>{employeeRows.length}</strong> karyawan</span>
           <nav aria-label="Halaman data karyawan" className="employees-pagination">
-            <span className="page-current" aria-current="page">1</span><span>2</span><span>3</span><span>…</span><span>13</span>
+            <button
+              aria-label="Halaman sebelumnya"
+              disabled={activePage === 1}
+              onClick={() => setCurrentPage(activePage - 1)}
+              type="button"
+            >
+              <ChevronLeft aria-hidden="true" size={15} />
+            </button>
+            {firstVisiblePage > 1 && (
+              <>
+                <button onClick={() => setCurrentPage(1)} type="button">1</button>
+                {firstVisiblePage > 2 && <span aria-hidden="true">…</span>}
+              </>
+            )}
+            {pageNumbers.map((pageNumber) => (
+              <button
+                aria-current={pageNumber === activePage ? "page" : undefined}
+                key={pageNumber}
+                onClick={() => setCurrentPage(pageNumber)}
+                type="button"
+              >
+                {pageNumber}
+              </button>
+            ))}
+            {lastVisiblePage < totalPages && (
+              <>
+                {lastVisiblePage < totalPages - 1 && <span aria-hidden="true">…</span>}
+                <button onClick={() => setCurrentPage(totalPages)} type="button">{totalPages}</button>
+              </>
+            )}
+            <button
+              aria-label="Halaman berikutnya"
+              disabled={activePage === totalPages || totalPages === 0}
+              onClick={() => setCurrentPage(activePage + 1)}
+              type="button"
+            >
+              <ChevronRight aria-hidden="true" size={15} />
+            </button>
           </nav>
         </footer>
       </div>

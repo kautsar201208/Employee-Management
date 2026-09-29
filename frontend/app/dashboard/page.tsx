@@ -1,5 +1,5 @@
 import Sidebar from "./_components/sidebar";
-import DashboardHeader from "./_components/dashboard-header";
+import Navbar from "./_components/navbar";
 import DashboardData from "./_components/dashboard-data";
 
 export default function DashboardPage() {
@@ -8,7 +8,7 @@ export default function DashboardPage() {
       <Sidebar activePage="dashboard" />
 
       <section className="dashboard-main">
-        <DashboardHeader />
+        <Navbar />
 
           <DashboardData />
       </section>

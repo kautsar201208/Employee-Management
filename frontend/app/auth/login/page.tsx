@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { ACCESS_TOKEN_KEY, loginWithBackend } from "@/lib/api";
+import { ACCESS_TOKEN_KEY, USER_EMAIL_KEY, loginWithBackend } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function LoginPage() {
     try {
       const accessToken = await loginWithBackend(email, password);
       sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+      sessionStorage.setItem(USER_EMAIL_KEY, email);
       router.replace("/dashboard");
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Login gagal. Silakan coba lagi.");

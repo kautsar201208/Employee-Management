@@ -9,6 +9,7 @@ export type DashboardSummary = {
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 export const ACCESS_TOKEN_KEY = "pusbanglin_access_token";
+export const USER_EMAIL_KEY = "pusbanglin_user_email";
 
 type ApiResponse<T> = {
   success: boolean;

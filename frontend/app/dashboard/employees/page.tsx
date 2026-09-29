@@ -1,5 +1,5 @@
 import Sidebar from "../_components/sidebar";
-import DashboardHeader from "../_components/dashboard-header";
+import Navbar from "../_components/navbar";
 import EmployeeDirectory from "./employee-directory";
 
 export default function EmployeesPage() {
@@ -7,7 +7,7 @@ export default function EmployeesPage() {
     <main className="dashboard-shell">
       <Sidebar activePage="employees" />
       <section className="dashboard-main">
-        <DashboardHeader />
+        <Navbar />
         <div className="employees-content">
           <header className="employees-heading">
             <div>
