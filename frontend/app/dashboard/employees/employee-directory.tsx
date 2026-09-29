@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Eye, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -160,6 +161,10 @@ function toEmployeeRow(employee: ApiEmployee, index: number): EmployeeRow {
   };
 }
 
+function getProfileInitials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "?";
+}
+
 export default function EmployeeDirectory() {
   const shouldReduceMotion = useReducedMotion();
   const [employees, setEmployees] = useState<ApiEmployee[]>([]);
@@ -173,6 +178,7 @@ export default function EmployeeDirectory() {
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [selectedProfile, setSelectedProfile] = useState<ApiEmployee | null>(null);
+  const [profileImageError, setProfileImageError] = useState(false);
   const [isEmployeeFormOpen, setIsEmployeeFormOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<ApiEmployee | null>(null);
   const [employeeForm, setEmployeeForm] = useState<EmployeeFormValues>(createEmptyEmployeeForm);
@@ -375,6 +381,7 @@ export default function EmployeeDirectory() {
   async function viewEmployeeProfile(employee: EmployeeRow) {
     setIsProfileOpen(true);
     setSelectedProfile(null);
+    setProfileImageError(false);
     setProfileError("");
 
     if (!employee.recordId) {
@@ -580,9 +587,26 @@ export default function EmployeeDirectory() {
         <div className="employee-profile-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsProfileOpen(false); }}>
           <section aria-labelledby="employee-profile-title" aria-modal="true" className="employee-profile-dialog" role="dialog">
             <header className="employee-profile-header">
-              <div>
-                <p className="eyebrow">Data pegawai</p>
-                <h2 id="employee-profile-title">{selectedProfile?.nama_lengkap || selectedProfile?.nama || "Profil Karyawan"}</h2>
+              <div className="employee-profile-identity">
+                <span className="employee-profile-photo" aria-hidden="true">
+                  {selectedProfile?.profile_image && !profileImageError ? (
+                    <Image
+                      alt=""
+                      className="employee-profile-photo-image"
+                      height={80}
+                      onError={() => setProfileImageError(true)}
+                      src={selectedProfile.profile_image}
+                      unoptimized
+                      width={80}
+                    />
+                  ) : (
+                    <span>{getProfileInitials(selectedProfile?.nama_lengkap || selectedProfile?.nama || "?")}</span>
+                  )}
+                </span>
+                <div>
+                  <p className="eyebrow">Data pegawai</p>
+                  <h2 id="employee-profile-title">{selectedProfile?.nama_lengkap || selectedProfile?.nama || "Profil Karyawan"}</h2>
+                </div>
               </div>
               <button aria-label="Tutup profil" className="employee-profile-close" onClick={() => setIsProfileOpen(false)} type="button"><X size={19} /></button>
             </header>
