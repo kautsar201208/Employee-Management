@@ -38,6 +38,7 @@ export type ApiEmployee = {
   jenis_kelamin?: string | null;
   tempat_lahir?: string | null;
   tanggal_lahir?: string | null;
+  profile_image?: string | null;
   nomor_ktp?: string | null;
   nomor_ponsel?: string | null;
   profile_image: string | null;

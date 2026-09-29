@@ -1894,6 +1894,33 @@ input {
   font-weight: 650;
 }
 
+.employee-profile-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.employee-profile-photo {
+  display: grid;
+  width: 80px;
+  height: 80px;
+  flex: 0 0 80px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #e7efff;
+  color: var(--blue-dark);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.employee-profile-photo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .employee-profile-close {
   display: grid;
   width: 34px;
@@ -2078,6 +2105,8 @@ input {
   .employee-profile-backdrop { padding: 14px; }
   .employee-profile-dialog { max-height: calc(100vh - 28px); padding: 18px; }
   .employee-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .employee-profile-photo { width: 60px; height: 60px; flex-basis: 60px; font-size: 18px; }
+  .employee-profile-identity { gap: 10px; }
 }
 
 @media (max-width: 430px) {
