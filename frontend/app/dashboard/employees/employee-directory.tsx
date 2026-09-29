@@ -124,11 +124,6 @@ export default function EmployeeDirectory() {
   const permanentCount = employeeRows.filter((employee) => /tetap|pns|pppk/.test(employmentType(employee))).length;
   const contractCount = employeeRows.filter((employee) => /kontrak|pkwt/.test(employmentType(employee))).length;
   const internCount = employeeRows.filter((employee) => /magang|intern/.test(employmentType(employee))).length;
-<<<<<<< HEAD
-  const percentage = (count: number) => employeeRows.length ? `${(count / employeeRows.length * 100).toFixed(1)}% dari total` : "0% dari total";
-
-=======
->>>>>>> cee987e057d372ff4b960c4da11d107b9e475143
   const cardVariants = {
     hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 8 },
     visible: {

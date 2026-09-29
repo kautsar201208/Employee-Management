@@ -832,7 +832,7 @@ input {
   position: sticky;
   top: 0;
   z-index: 9;
-  min-height: 70px;
+  min-height: 82px;
   margin-inline: calc(-1 * clamp(22px, 4vw, 58px));
   justify-content: flex-end;
   gap: 24px;
