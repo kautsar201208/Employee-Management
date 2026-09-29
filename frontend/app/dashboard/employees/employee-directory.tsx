@@ -1,27 +1,102 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
+import { Eye, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ACCESS_TOKEN_KEY, getEmployeeById, getEmployees, type ApiEmployee } from "@/lib/api";
 
-const employees = [
-  { initials: "BS", id: "EMP-00101", name: "Budi Santoso", email: "budi.santoso@perusahaan.com", role: "Lead Fullstack Engineer", department: "IT", status: "Tetap", joined: "12 Jan 2021" },
-  { initials: "SR", id: "EMP-00102", name: "Siti Rahayu", email: "siti.rahayu@perusahaan.com", role: "Senior Product Designer", department: "IT", status: "Tetap", joined: "03 Mar 2021" },
-  { initials: "AP", id: "EMP-00103", name: "Andi Pratama", email: "andi.pratama@perusahaan.com", role: "DevOps Specialist", department: "IT", status: "Tetap", joined: "15 Jun 2022" },
-  { initials: "DL", id: "EMP-00104", name: "Dewi Lestari", email: "dewi.lestari@perusahaan.com", role: "People Operations Lead", department: "HR", status: "Tetap", joined: "01 Agu 2022" },
-  { initials: "RR", id: "EMP-00105", name: "Rizky Ramadhan", email: "rizky.r@perusahaan.com", role: "Performance Marketing", department: "Marketing", status: "Kontrak", joined: "10 Jan 2023" },
-  { initials: "MI", id: "EMP-00106", name: "Maya Indah", email: "maya.indah@perusahaan.com", role: "Senior Financial Analyst", department: "Keuangan", status: "Tetap", joined: "05 Mei 2023" },
-  { initials: "AH", id: "EMP-00107", name: "Ahmad Hidayat", email: "ahmad.h@perusahaan.com", role: "Warehouse & Logistics Supervisor", department: "Operasional", status: "Kontrak", joined: "18 Sep 2023" },
-  { initials: "PW", id: "EMP-00108", name: "Putri Wulandari", email: "putri.w@perusahaan.com", role: "Talent Acquisition Officer", department: "HR", status: "Kontrak", joined: "04 Nov 2023" },
-  { initials: "DA", id: "EMP-00109", name: "Dimas Anggara", email: "dimas.a@perusahaan.com", role: "Content & Copywriter", department: "Marketing", status: "Kontrak", joined: "15 Feb 2024" },
-  { initials: "FP", id: "EMP-00110", name: "Fajar Pratama", email: "fajar.p@perusahaan.com", role: "Finance & Accounting Intern", department: "Keuangan", status: "Magang", joined: "01 Jul 2024" },
-];
+type EmployeeRow = {
+  key: string;
+  recordId: string;
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  status: string;
+  joined: string;
+  initials: string;
+};
+
+function toEmployeeRow(employee: ApiEmployee, index: number): EmployeeRow {
+  const name = employee.nama_lengkap || employee.nama || "Nama belum diisi";
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+
+  return {
+    key: String(employee.id ?? employee.nip ?? employee.no ?? index),
+    recordId: employee.id == null ? "" : String(employee.id),
+    id: String(employee.nip ?? employee.id ?? employee.no ?? "—"),
+    name,
+    email: employee.email || "—",
+    role: employee.jabatan || employee.jenis_jabatan || "—",
+    department: employee.tim_kerja || "—",
+    status: employee.status || employee.jenis_jabatan || "—",
+    joined: employee.tmt_golongan || "—",
+    initials: initials || "?",
+  };
+}
 
 export default function EmployeeDirectory() {
+  const shouldReduceMotion = useReducedMotion();
+  const [employees, setEmployees] = useState<ApiEmployee[]>([]);
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("all");
   const [status, setStatus] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [selectedProfile, setSelectedProfile] = useState<ApiEmployee | null>(null);
 
-  const visibleEmployees = employees.filter((employee) => {
-    const searchable = `${employee.name} ${employee.id} ${employee.email} ${employee.role}`.toLowerCase();
+  useEffect(() => {
+    const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+
+    if (!accessToken) {
+      const timeout = window.setTimeout(() => {
+        setError("Silakan masuk untuk melihat data karyawan.");
+        setIsLoading(false);
+      }, 0);
+      return () => window.clearTimeout(timeout);
+    }
+
+    const controller = new AbortController();
+
+    getEmployees(accessToken, controller.signal)
+      .then(setEmployees)
+      .catch((fetchError: unknown) => {
+        if (fetchError instanceof DOMException && fetchError.name === "AbortError") return;
+        setError(fetchError instanceof Error ? fetchError.message : "Gagal mengambil data karyawan.");
+      })
+      .finally(() => setIsLoading(false));
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!isProfileOpen) return;
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsProfileOpen(false);
+    }
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isProfileOpen]);
+
+  const employeeRows = useMemo(() => employees.map(toEmployeeRow), [employees]);
+  const departments = useMemo(
+    () => [...new Set(employeeRows.map((employee) => employee.department).filter((value) => value !== "—"))].sort(),
+    [employeeRows],
+  );
+  const statuses = useMemo(
+    () => [...new Set(employeeRows.map((employee) => employee.status).filter((value) => value !== "—"))].sort(),
+    [employeeRows],
+  );
+
+  const visibleEmployees = employeeRows.filter((employee) => {
+    const searchable = `${employee.name} ${employee.id} ${employee.email} ${employee.role} ${employee.department}`.toLowerCase();
     return (
       searchable.includes(query.trim().toLowerCase()) &&
       (department === "all" || employee.department === department) &&
@@ -30,11 +105,57 @@ export default function EmployeeDirectory() {
   });
 
   const filtersActive = query.trim() !== "" || department !== "all" || status !== "all";
+  const employmentType = (employee: EmployeeRow) => employee.status.toLowerCase();
+  const permanentCount = employeeRows.filter((employee) => /tetap|pns|pppk/.test(employmentType(employee))).length;
+  const contractCount = employeeRows.filter((employee) => /kontrak|pkwt/.test(employmentType(employee))).length;
+  const internCount = employeeRows.filter((employee) => /magang|intern/.test(employmentType(employee))).length;
+  const percentage = (count: number) => employeeRows.length ? `${(count / employeeRows.length * 100).toFixed(1)}% dari total` : "0% dari total";
+  const cardVariants = {
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 8 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: shouldReduceMotion ? 0 : 0.32, ease: "easeOut" as const },
+    },
+  };
+
+  const employeeStats = [
+    { label: "Total Karyawan", value: String(employeeRows.length), note: "Data dari backend", icon: "♙" },
+    { label: "Pegawai Tetap", value: String(permanentCount), note: percentage(permanentCount), icon: "✓" },
+    { label: "Kontrak (PKWT)", value: String(contractCount), note: percentage(contractCount), icon: "▤" },
+    { label: "Magang & Internship", value: String(internCount), note: percentage(internCount), icon: "▦" },
+  ];
 
   function resetFilters() {
     setQuery("");
     setDepartment("all");
     setStatus("all");
+  }
+
+  async function viewEmployeeProfile(employee: EmployeeRow) {
+    setIsProfileOpen(true);
+    setSelectedProfile(null);
+    setProfileError("");
+
+    if (!employee.recordId) {
+      setProfileError("ID database pegawai tidak tersedia untuk mengambil profil.");
+      return;
+    }
+
+    const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!accessToken) {
+      setProfileError("Sesi login tidak tersedia. Silakan masuk kembali.");
+      return;
+    }
+
+    setIsProfileLoading(true);
+    try {
+      setSelectedProfile(await getEmployeeById(accessToken, employee.recordId));
+    } catch (fetchError) {
+      setProfileError(fetchError instanceof Error ? fetchError.message : "Gagal mengambil profil pegawai.");
+    } finally {
+      setIsProfileLoading(false);
+    }
   }
 
   function exportEmployees() {
@@ -53,7 +174,27 @@ export default function EmployeeDirectory() {
   }
 
   return (
-    <section className="employee-directory" aria-label="Daftar karyawan">
+    <motion.section
+      animate="visible"
+      aria-label="Daftar karyawan"
+      className="employee-directory"
+      initial="hidden"
+      variants={cardVariants}
+    >
+      <section className="employees-summary-grid" aria-label="Ringkasan data karyawan">
+        {employeeStats.map((stat) => (
+          <motion.article
+            className="employees-summary-card"
+            key={stat.label}
+            variants={cardVariants}
+            whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+          >
+            <div><span>{stat.label}</span><strong>{isLoading ? "—" : stat.value}</strong><small>{isLoading ? "Memuat..." : stat.note}</small></div>
+            <span className="employees-summary-icon" aria-hidden="true">{stat.icon}</span>
+          </motion.article>
+        ))}
+      </section>
+
       <div className="employees-toolbar">
         <div className="employees-filter-group">
           <label className="employees-search">
@@ -70,20 +211,14 @@ export default function EmployeeDirectory() {
             <span className="visually-hidden">Filter departemen</span>
             <select onChange={(event) => setDepartment(event.target.value)} value={department}>
               <option value="all">Semua Departemen</option>
-              <option value="IT">IT</option>
-              <option value="HR">HR</option>
-              <option value="Keuangan">Keuangan</option>
-              <option value="Marketing">Marketing</option>
-              <option value="Operasional">Operasional</option>
+              {departments.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
           <label className="employees-select">
             <span className="visually-hidden">Filter status</span>
             <select onChange={(event) => setStatus(event.target.value)} value={status}>
               <option value="all">Semua Status</option>
-              <option value="Tetap">Tetap</option>
-              <option value="Kontrak">Kontrak</option>
-              <option value="Magang">Magang</option>
+              {statuses.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
           {filtersActive && <button className="employees-reset" onClick={resetFilters} type="button">Reset filter</button>}
@@ -94,18 +229,18 @@ export default function EmployeeDirectory() {
       <div className="employees-table-panel">
         <div className="employees-table-wrap">
           <table className="employees-table">
-          <thead>
-              <tr><th scope="col">Karyawan</th><th scope="col">ID Karyawan</th><th scope="col">Jabatan</th><th scope="col">Departemen</th><th scope="col">Status</th><th scope="col">Tanggal Bergabung</th><th className="employees-actions-heading" scope="col">Aksi</th></tr>
-          </thead>
-          <tbody>
-            {visibleEmployees.map((employee) => (
-              <tr key={employee.email}>
-                <td>
+            <thead>
+              <tr><th scope="col">Karyawan</th><th scope="col">NIP</th><th scope="col">Jabatan</th><th scope="col">Tim Kerja</th><th scope="col">Status</th><th scope="col">TMT Golongan</th><th className="employees-actions-heading" scope="col">Aksi</th></tr>
+            </thead>
+            <tbody>
+              {visibleEmployees.map((employee) => (
+                <tr key={employee.key}>
+                  <td>
                     <div className="employees-person">
                       <span className="employees-initials">{employee.initials}</span>
                       <span><strong>{employee.name}</strong><small>{employee.email}</small></span>
                     </div>
-                </td>
+                  </td>
                   <td className="employee-id">{employee.id}</td>
                   <td>{employee.role}</td>
                   <td><span className="employee-department">{employee.department}</span></td>
@@ -113,26 +248,67 @@ export default function EmployeeDirectory() {
                   <td>{employee.joined}</td>
                   <td className="employees-actions-cell">
                     <div className="employees-actions">
-                      <button aria-label={`Lihat profil ${employee.name}`} title="Lihat Profil" type="button">◉</button>
+                      <button aria-label={`Lihat profil ${employee.name}`} onClick={() => void viewEmployeeProfile(employee)} title="Lihat Profil" type="button"><Eye aria-hidden="true" size={16} strokeWidth={1.8} /></button>
                       <button aria-label={`Ubah data ${employee.name}`} title="Ubah Data" type="button">✎</button>
                       <button aria-label={`Hapus ${employee.name}`} title="Hapus Karyawan" type="button">×</button>
                     </div>
                   </td>
-              </tr>
-            ))}
-            {visibleEmployees.length === 0 && (
+                </tr>
+              ))}
+              {!isLoading && !error && visibleEmployees.length === 0 && (
                 <tr><td className="employees-empty" colSpan={7}>Karyawan tidak ditemukan. Coba ubah kata kunci atau filter Anda.</td></tr>
-            )}
-          </tbody>
+              )}
+              {isLoading && <tr><td className="employees-empty" colSpan={7}>Mengambil data karyawan dari backend...</td></tr>}
+              {error && (
+                <tr><td className="employees-empty" colSpan={7}>
+                  <span role="alert">{error}</span>
+                  {error.includes("Silakan masuk") && <Link className="employees-login-link" href="/auth/login">Masuk</Link>}
+                </td></tr>
+              )}
+            </tbody>
           </table>
         </div>
         <footer className="employees-table-footer">
-          <span>Menampilkan <strong>{visibleEmployees.length}</strong> data contoh dari 128 karyawan</span>
+          <span>Menampilkan <strong>{visibleEmployees.length}</strong> dari <strong>{employeeRows.length}</strong> karyawan</span>
           <nav aria-label="Halaman data karyawan" className="employees-pagination">
             <span className="page-current" aria-current="page">1</span><span>2</span><span>3</span><span>…</span><span>13</span>
           </nav>
         </footer>
       </div>
-    </section>
+
+      {isProfileOpen && (
+        <div className="employee-profile-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsProfileOpen(false); }}>
+          <section aria-labelledby="employee-profile-title" aria-modal="true" className="employee-profile-dialog" role="dialog">
+            <header className="employee-profile-header">
+              <div>
+                <p className="eyebrow">Data pegawai</p>
+                <h2 id="employee-profile-title">{selectedProfile?.nama_lengkap || selectedProfile?.nama || "Profil Karyawan"}</h2>
+              </div>
+              <button aria-label="Tutup profil" className="employee-profile-close" onClick={() => setIsProfileOpen(false)} type="button"><X size={19} /></button>
+            </header>
+
+            {isProfileLoading && <p className="employee-profile-message">Mengambil profil dari backend...</p>}
+            {profileError && <p className="employee-profile-message" role="alert">{profileError}</p>}
+            {selectedProfile && (
+              <dl className="employee-profile-fields">
+                <div><dt>NIP</dt><dd>{selectedProfile.nip || "—"}</dd></div>
+                <div><dt>Email</dt><dd>{selectedProfile.email || "—"}</dd></div>
+                <div><dt>Status</dt><dd>{selectedProfile.status || "—"}</dd></div>
+                <div><dt>Jenis Jabatan</dt><dd>{selectedProfile.jenis_jabatan || "—"}</dd></div>
+                <div><dt>Jabatan</dt><dd>{selectedProfile.jabatan || "—"}</dd></div>
+                <div><dt>Tim Kerja</dt><dd>{selectedProfile.tim_kerja || "—"}</dd></div>
+                <div><dt>Pangkat / Golongan</dt><dd>{selectedProfile.pangkat_golongan || "—"}</dd></div>
+                <div><dt>TMT Golongan</dt><dd>{selectedProfile.tmt_golongan || "—"}</dd></div>
+                <div><dt>Pendidikan</dt><dd>{selectedProfile.jenjang_pendidikan || "—"}</dd></div>
+                <div><dt>Jurusan</dt><dd>{selectedProfile.jurusan_pendidikan || "—"}</dd></div>
+                <div><dt>Jenis Kelamin</dt><dd>{selectedProfile.jenis_kelamin || "—"}</dd></div>
+                <div><dt>Tempat, Tanggal Lahir</dt><dd>{[selectedProfile.tempat_lahir, selectedProfile.tanggal_lahir].filter(Boolean).join(", ") || "—"}</dd></div>
+                <div><dt>Nomor Ponsel</dt><dd>{selectedProfile.nomor_ponsel || "—"}</dd></div>
+              </dl>
+            )}
+          </section>
+        </div>
+      )}
+    </motion.section>
   );
 }

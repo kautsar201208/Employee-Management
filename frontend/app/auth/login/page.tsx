@@ -1,7 +1,36 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
+import { ACCESS_TOKEN_KEY, loginWithBackend } from "@/lib/api";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") || "");
+    const password = String(formData.get("password") || "");
+
+    try {
+      const accessToken = await loginWithBackend(email, password);
+      sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+      router.replace("/dashboard");
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "Login gagal. Silakan coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <main className="auth-shell">
       <section className="auth-story" aria-label="Pusat Pengembangan dan Pelindungan Bahasa dan Sastra">
@@ -22,7 +51,7 @@ export default function LoginPage() {
           <p className="eyebrow">Selamat datang kembali</p>
           <h2>Masuk ke akun</h2>
           <p className="auth-intro">Gunakan email kantor untuk melanjutkan.</p>
-          <form className="auth-form">
+          <form className="auth-form" onSubmit={handleSubmit}>
             <label className="field">
               Email kantor
               <input autoComplete="email" name="email" placeholder="nama@perusahaan.com" required type="email" />
@@ -38,7 +67,10 @@ export default function LoginPage() {
               </label>
               <a className="text-link" href="#forgot-password">Lupa kata sandi?</a>
             </div>
-            <button className="primary-button" type="submit">Masuk</button>
+            {error && <p className="auth-error" role="alert">{error}</p>}
+            <button className="primary-button" disabled={isSubmitting} type="submit">
+              {isSubmitting ? "Memeriksa akun..." : "Masuk"}
+            </button>
           </form>
           <p className="auth-switch">Belum punya akun? <Link className="text-link" href="/auth/register">Daftar sekarang</Link></p>
         </div>
