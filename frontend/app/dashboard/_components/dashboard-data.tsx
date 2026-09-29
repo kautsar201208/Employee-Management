@@ -69,10 +69,10 @@ export default function DashboardData() {
   ].map((team, index) => ({ ...team, color: teamColors[index] })) : [];
 
   const stats = [
-    { label: "Total Karyawan", value: summary?.total_pegawai, icon: "♙", note: "Data dari backend" },
-    { label: "Tim TU", value: summary?.total_TU, icon: "✓", note: "Jumlah pegawai" },
-    { label: "Tim Molin", value: summary?.total_Molin, icon: "+", note: "Jumlah pegawai" },
-    { label: "Tim KI", value: summary?.total_KI, icon: "▦", note: "Jumlah pegawai" },
+    { label: "Total Karyawan", value: summary?.total_pegawai, icon: "♙" },
+    { label: "Tim TU", value: summary?.total_TU, icon: "✓" },
+    { label: "Tim Molin", value: summary?.total_Molin, icon: "+" },
+    { label: "Tim KI", value: summary?.total_KI, icon: "▦" },
   ];
 
   const statusCounts = employees.reduce<Record<string, number>>((counts, employee) => {
@@ -127,7 +127,6 @@ export default function DashboardData() {
               </div>
               <span className="home-stat-icon" aria-hidden="true">{stat.icon}</span>
             </div>
-            <p className="home-stat-note"><strong>{stat.value === undefined ? "—" : stat.value.toLocaleString("id-ID")}</strong><span>{isLoading ? "Memuat..." : error ? "Tidak tersedia" : stat.note}</span></p>
           </motion.article>
         ))}
       </motion.section>
@@ -216,7 +215,6 @@ export default function DashboardData() {
         <header className="recent-heading">
           <div>
             <h2>Data Karyawan</h2>
-            <p>Lima data pegawai dari backend</p>
           </div>
           <Link className="home-see-all" href="/dashboard/employees">Lihat Semua <span aria-hidden="true">→</span></Link>
         </header>

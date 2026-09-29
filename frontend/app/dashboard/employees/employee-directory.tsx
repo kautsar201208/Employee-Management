@@ -124,8 +124,11 @@ export default function EmployeeDirectory() {
   const permanentCount = employeeRows.filter((employee) => /tetap|pns|pppk/.test(employmentType(employee))).length;
   const contractCount = employeeRows.filter((employee) => /kontrak|pkwt/.test(employmentType(employee))).length;
   const internCount = employeeRows.filter((employee) => /magang|intern/.test(employmentType(employee))).length;
+<<<<<<< HEAD
   const percentage = (count: number) => employeeRows.length ? `${(count / employeeRows.length * 100).toFixed(1)}% dari total` : "0% dari total";
 
+=======
+>>>>>>> cee987e057d372ff4b960c4da11d107b9e475143
   const cardVariants = {
     hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 8 },
     visible: {
@@ -136,10 +139,10 @@ export default function EmployeeDirectory() {
   };
 
   const employeeStats = [
-    { label: "Total Karyawan", value: String(employeeRows.length), note: "Data dari backend", icon: "♙" },
-    { label: "Pegawai Tetap", value: String(permanentCount), note: percentage(permanentCount), icon: "✓" },
-    { label: "Kontrak (PKWT)", value: String(contractCount), note: percentage(contractCount), icon: "▤" },
-    { label: "Magang & Internship", value: String(internCount), note: percentage(internCount), icon: "▦" },
+    { label: "Total Karyawan", value: String(employeeRows.length), icon: "♙" },
+    { label: "Pegawai Tetap", value: String(permanentCount), icon: "✓" },
+    { label: "Kontrak (PKWT)", value: String(contractCount), icon: "▤" },
+    { label: "Magang & Internship", value: String(internCount), icon: "▦" },
   ];
 
   function resetFilters() {
@@ -206,7 +209,7 @@ export default function EmployeeDirectory() {
             variants={cardVariants}
             whileHover={shouldReduceMotion ? undefined : { y: -2 }}
           >
-            <div><span>{stat.label}</span><strong>{isLoading ? "—" : stat.value}</strong><small>{isLoading ? "Memuat..." : stat.note}</small></div>
+            <div><span>{stat.label}</span><strong>{isLoading ? "—" : stat.value}</strong></div>
             <span className="employees-summary-icon" aria-hidden="true">{stat.icon}</span>
           </motion.article>
         ))}

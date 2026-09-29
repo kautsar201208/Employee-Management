@@ -1,4 +1,4 @@
-import { Building2, House, UsersRound } from "lucide-react";
+import { House, UsersRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -26,7 +26,6 @@ export default function Sidebar({ activePage }: SidebarProps) {
       </nav>
       <div className="sidebar-bottom">
         <div className="sidebar-org-footer">
-          <span className="sidebar-org-symbol" aria-hidden="true"><Building2 size={20} strokeWidth={1.8} /></span>
           <span><strong>Pusat Pengembangan dan Pelindungan Bahasa dan Sastra</strong><small>Sistem Kepegawaian</small></span>
         </div>
       </div>
