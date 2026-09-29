@@ -14,7 +14,6 @@ export default function EmployeesPage() {
               <h1>Data Karyawan</h1>
               <p>Kelola seluruh data karyawan secara terpusat.</p>
             </div>
-            <button className="primary-button" type="button"><span aria-hidden="true">+</span>Tambah Karyawan</button>
           </header>
 
           <EmployeeDirectory />

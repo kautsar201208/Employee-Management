@@ -38,7 +38,13 @@ export type ApiEmployee = {
   jenis_kelamin?: string | null;
   tempat_lahir?: string | null;
   tanggal_lahir?: string | null;
+  nomor_ktp?: string | null;
   nomor_ponsel?: string | null;
+};
+
+export type EmployeeInput = Omit<ApiEmployee, "id" | "no" | "nama_lengkap" | "nip"> & {
+  nama_lengkap: string;
+  nip: string;
 };
 
 async function readApiResponse<T>(response: Response): Promise<ApiResponse<T>> {
@@ -126,6 +132,55 @@ export async function getEmployeeById(accessToken: string, id: string, signal?: 
   }
 
   return result.data;
+}
+
+async function mutateEmployee(
+  accessToken: string,
+  method: "POST" | "PUT" | "DELETE",
+  id?: string,
+  employee?: EmployeeInput,
+): Promise<ApiEmployee> {
+  const endpoint = id
+    ? `${API_BASE_URL}/api/employees/${encodeURIComponent(id)}`
+    : `${API_BASE_URL}/api/employees`;
+  let response: Response;
+
+  try {
+    response = await fetch(endpoint, {
+      method,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...(employee ? { "Content-Type": "application/json" } : {}),
+      },
+      body: employee ? JSON.stringify(employee) : undefined,
+    });
+  } catch {
+    throw new Error(`Backend tidak dapat dihubungi di ${API_BASE_URL}.`);
+  }
+
+  if (response.status === 401) {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    throw new Error("Sesi login tidak valid. Silakan masuk kembali.");
+  }
+
+  const result = await readApiResponse<ApiEmployee>(response);
+  if (!result.data) {
+    throw new Error("Backend tidak mengirim data pegawai.");
+  }
+
+  return result.data;
+}
+
+export function createEmployee(accessToken: string, employee: EmployeeInput): Promise<ApiEmployee> {
+  return mutateEmployee(accessToken, "POST", undefined, employee);
+}
+
+export function updateEmployee(accessToken: string, id: string, employee: EmployeeInput): Promise<ApiEmployee> {
+  return mutateEmployee(accessToken, "PUT", id, employee);
+}
+
+export async function deleteEmployee(accessToken: string, id: string): Promise<void> {
+  await mutateEmployee(accessToken, "DELETE", id);
 }
 
 export async function getDashboardSummary(accessToken: string, signal?: AbortSignal): Promise<DashboardSummary> {
