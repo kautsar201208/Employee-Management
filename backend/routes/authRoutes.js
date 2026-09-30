@@ -3,24 +3,19 @@ const express = require("express");
 const {
     register,
     login,
-    getProfile
+    forgotPassword,
+    getProfile,
+    getMyEmployee
 } = require("../controllers/authController");
 
 const authenticate = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-
-// REGISTER
 router.post("/register", register);
-
-
-// LOGIN
 router.post("/login", login);
-
-
-// PROFILE ADMIN
+router.post("/forgot-password", forgotPassword);
 router.get("/profile", authenticate, getProfile);
-
+router.get("/me", authenticate, getMyEmployee);
 
 module.exports = router;

@@ -1,7 +1,5 @@
 const supabase = require("../config/supabase");
 
-
-// REGISTER
 const register = async (req, res) => {
     try {
         const { nama, email, password } = req.body;
@@ -47,7 +45,6 @@ const register = async (req, res) => {
 };
 
 
-// LOGIN
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -89,7 +86,47 @@ const login = async (req, res) => {
 };
 
 
-// PROFILE ADMIN
+// =====================================================
+// FORGOT PASSWORD
+// =====================================================
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email wajib diisi"
+            });
+        }
+
+        const { error } = await supabase.auth.resetPasswordForEmail(
+            email
+        );
+
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Link reset password telah dikirim ke email"
+        });
+
+    } catch (error) {
+        console.error("Forgot password error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Terjadi kesalahan pada server"
+        });
+    }
+};
+
+
 const getProfile = async (req, res) => {
     try {
         const user = req.user;
@@ -116,8 +153,32 @@ const getProfile = async (req, res) => {
 };
 
 
+const getMyEmployee = async (req, res) => {
+    try {
+        return res.status(200).json({
+            success: true,
+            message: "Data akun berhasil diambil",
+            data: {
+                role: req.role,
+                employee: req.employee || null
+            }
+        });
+
+    } catch (error) {
+        console.error("Get my employee error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Terjadi kesalahan pada server"
+        });
+    }
+};
+
+
 module.exports = {
     register,
     login,
-    getProfile
+    forgotPassword,
+    getProfile,
+    getMyEmployee
 };
