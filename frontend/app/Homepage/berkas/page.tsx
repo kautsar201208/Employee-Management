@@ -3,8 +3,19 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import UserSidebar from "../_components/user-sidebar";
+import {
+  ACCESS_TOKEN_KEY,
+  USER_EMAIL_KEY,
+  getUserDocuments,
+  uploadUserDocument,
+  deleteUserDocument,
+  getMyAccount,
+  DocumentItem,
+  ApiEmployee,
+} from "@/lib/api";
 import {
   FileUp,
   FileText,
@@ -28,7 +39,9 @@ import {
   ChevronDown,
   Sparkles,
   Menu,
-  Bell
+  Bell,
+  ExternalLink,
+  Loader2,
 } from "lucide-react";
 
 interface UploadedDocument {
@@ -39,126 +52,86 @@ interface UploadedDocument {
   categoryLabel: string;
   fileType: "PDF" | "JPG" | "PNG";
   fileSize: string;
+  rawBytes?: number;
   uploadDate: string;
   effectiveDate?: string;
   status: "verified" | "pending" | "rejected";
   statusLabel: string;
+  signedUrl?: string | null;
 }
 
-const INITIAL_DOCUMENTS: UploadedDocument[] = [
-  {
-    id: "DOC-001",
-    title: "SK Kenaikan Pangkat Penata Tingkat I (III/d)",
-    documentNumber: "823.3/0412/KP/2022",
-    category: "sk",
-    categoryLabel: "Surat Keputusan",
-    fileType: "PDF",
-    fileSize: "1.4 MB",
-    uploadDate: "15 Apr 2022",
-    effectiveDate: "01 Apr 2022",
+const categoryLabels: Record<string, string> = {
+  sk: "Surat Keputusan",
+  pendidikan: "Pendidikan Formal",
+  sertifikat: "Sertifikasi",
+  kependudukan: "Dokumen Pribadi",
+  skp: "Penilaian Kinerja",
+};
+
+function mapBackendDocument(doc: DocumentItem): UploadedDocument {
+  const mime = doc.file_type || "";
+  const ext = (doc.nama_file || "").split(".").pop()?.toUpperCase();
+  const fileType: "PDF" | "JPG" | "PNG" =
+    ext === "PNG" || mime.includes("png")
+      ? "PNG"
+      : ext === "JPG" || ext === "JPEG" || mime.includes("jpeg") || mime.includes("jpg")
+      ? "JPG"
+      : "PDF";
+
+  const sizeMB = doc.file_size
+    ? `${(doc.file_size / (1024 * 1024)).toFixed(1)} MB`
+    : "1.0 MB";
+
+  const catRaw = (doc.kategori || "").toLowerCase();
+  let category: UploadedDocument["category"] = "sk";
+  if (catRaw.includes("pendidikan") || catRaw.includes("ijazah")) category = "pendidikan";
+  else if (catRaw.includes("sertifikat") || catRaw.includes("sertifikasi")) category = "sertifikat";
+  else if (catRaw.includes("kependudukan") || catRaw.includes("ktp") || catRaw.includes("kk")) category = "kependudukan";
+  else if (catRaw.includes("skp") || catRaw.includes("kinerja")) category = "skp";
+
+  let formattedDate = "Baru saja";
+  if (doc.created_at) {
+    try {
+      formattedDate = new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(doc.created_at));
+    } catch {
+      formattedDate = "Hari ini";
+    }
+  }
+
+  return {
+    id: doc.id,
+    title: doc.nama_file || "Dokumen Kepegawaian",
+    documentNumber: `DOC-${doc.id.slice(0, 8).toUpperCase()}`,
+    category,
+    categoryLabel: doc.kategori || categoryLabels[category],
+    fileType,
+    fileSize: sizeMB,
+    rawBytes: doc.file_size || 0,
+    uploadDate: formattedDate,
     status: "verified",
-    statusLabel: "Terverifikasi BKN",
-  },
-  {
-    id: "DOC-002",
-    title: "SK Pengangkatan Jabfung Pranata Komputer Ahli Muda",
-    documentNumber: "821.29/019/JF/2021",
-    category: "sk",
-    categoryLabel: "Surat Keputusan",
-    fileType: "PDF",
-    fileSize: "2.1 MB",
-    uploadDate: "20 Jan 2021",
-    effectiveDate: "15 Jan 2021",
-    status: "verified",
-    statusLabel: "Terverifikasi",
-  },
-  {
-    id: "DOC-003",
-    title: "SK Pengangkatan Pegawai Negeri Sipil (PNS 100%)",
-    documentNumber: "813.2/0289/PNS/2016",
-    category: "sk",
-    categoryLabel: "Surat Keputusan",
-    fileType: "PDF",
-    fileSize: "1.8 MB",
-    uploadDate: "10 Apr 2016",
-    effectiveDate: "01 Apr 2016",
-    status: "verified",
-    statusLabel: "Terverifikasi",
-  },
-  {
-    id: "DOC-004",
-    title: "Ijazah & Transkrip S2 Magister Humaniora (UI)",
-    documentNumber: "UI-M.Hum/2018/08942",
-    category: "pendidikan",
-    categoryLabel: "Pendidikan Formal",
-    fileType: "PDF",
-    fileSize: "3.5 MB",
-    uploadDate: "12 Sep 2018",
-    effectiveDate: "30 Ags 2018",
-    status: "verified",
-    statusLabel: "Terverifikasi Kemdikbud",
-  },
-  {
-    id: "DOC-005",
-    title: "Ijazah & Transkrip S1 Sarjana Sastra (UGM)",
-    documentNumber: "UGM-SS/2012/03141",
-    category: "pendidikan",
-    categoryLabel: "Pendidikan Formal",
-    fileType: "PDF",
-    fileSize: "2.9 MB",
-    uploadDate: "20 Agu 2015",
-    effectiveDate: "15 Jul 2012",
-    status: "verified",
-    statusLabel: "Terverifikasi Kemdikbud",
-  },
-  {
-    id: "DOC-006",
-    title: "Sertifikat Kelulusan Pelatihan UI/UX Design System (BNSP)",
-    documentNumber: "BNSP-IT/2023/UX-7721",
-    category: "sertifikat",
-    categoryLabel: "Sertifikasi",
-    fileType: "PDF",
-    fileSize: "1.2 MB",
-    uploadDate: "14 Nov 2023",
-    effectiveDate: "01 Nov 2023",
-    status: "verified",
-    statusLabel: "Terverifikasi",
-  },
-  {
-    id: "DOC-007",
-    title: "Sertifikat Uji Kemahiran Berbahasa Indonesia (UKBI)",
-    documentNumber: "UKBI/PB/2024/00810",
-    category: "sertifikat",
-    categoryLabel: "Sertifikasi",
-    fileType: "PDF",
-    fileSize: "0.9 MB",
-    uploadDate: "10 Jun 2024",
-    effectiveDate: "28 Mei 2024",
-    status: "verified",
-    statusLabel: "Predikat Istimewa",
-  },
-  {
-    id: "DOC-008",
-    title: "Laporan Sasaran Kinerja Pegawai (SKP) Periode 2024",
-    documentNumber: "SKP-2024/MOLIN/089",
-    category: "skp",
-    categoryLabel: "Penilaian Kinerja",
-    fileType: "PDF",
-    fileSize: "1.6 MB",
-    uploadDate: "Hari Ini, 09:30",
-    effectiveDate: "30 Des 2024",
-    status: "pending",
-    statusLabel: "Menunggu Validasi SDM",
-  },
-];
+    statusLabel: "Terverifikasi Sistem",
+    signedUrl: doc.signed_url || null,
+  };
+}
 
 export default function UnggahKelolaBerkasPage() {
-  const [documents, setDocuments] = useState<UploadedDocument[]>(INITIAL_DOCUMENTS);
+  const router = useRouter();
+  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [previewDoc, setPreviewDoc] = useState<UploadedDocument | null>(null);
   const [deleteConfirmDoc, setDeleteConfirmDoc] = useState<UploadedDocument | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // User info state
+  const [currentEmployee, setCurrentEmployee] = useState<ApiEmployee | null>(null);
+  const [userEmail, setUserEmail] = useState("");
 
   // Upload Form State
   const [formCategory, setFormCategory] = useState<UploadedDocument["category"]>("sk");
@@ -168,6 +141,7 @@ export default function UnggahKelolaBerkasPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccessAlert, setUploadSuccessAlert] = useState(false);
+  const [uploadErrorAlert, setUploadErrorAlert] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Date format
@@ -186,6 +160,45 @@ export default function UnggahKelolaBerkasPage() {
       // fallback
     }
   }, []);
+
+  // Fetch initial documents & user info
+  useEffect(() => {
+    const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!token) {
+      router.replace("/auth/login");
+      return;
+    }
+
+    const email = sessionStorage.getItem(USER_EMAIL_KEY) || "";
+    setUserEmail(email);
+
+    async function loadData() {
+      if (!token) return;
+      setIsLoadingDocs(true);
+
+      // 1. Ambil data akun pegawai
+      try {
+        const account = await getMyAccount(token);
+        if (account.employee) {
+          setCurrentEmployee(account.employee);
+        }
+      } catch (err) {
+        console.warn("Notice loading account:", err);
+      }
+
+      // 2. Ambil dokumen
+      try {
+        const docs = await getUserDocuments(token);
+        setDocuments(docs.map(mapBackendDocument));
+      } catch (err) {
+        console.error("Gagal memuat berkas:", err);
+      } finally {
+        setIsLoadingDocs(false);
+      }
+    }
+
+    loadData();
+  }, [router]);
 
   // Filtered documents
   const filteredDocuments = documents.filter((doc) => {
@@ -221,68 +234,88 @@ export default function UnggahKelolaBerkasPage() {
   };
 
   // Handle Upload Submission
-  const handleUploadSubmit = (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile || !formTitle) return;
 
+    const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!token) {
+      router.replace("/auth/login");
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(15);
+    setUploadErrorAlert(null);
 
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 95) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 25;
+    try {
+      const fd = new FormData();
+      fd.append("file", selectedFile);
+      fd.append("kategori", categoryLabels[formCategory] || formCategory);
+      fd.append("title", formTitle);
+      if (formNumber) {
+        fd.append("documentNumber", formNumber);
+      }
+
+      const uploaded = await uploadUserDocument(token, fd, (pct) => {
+        setUploadProgress(Math.max(15, pct));
       });
-    }, 150);
 
-    setTimeout(() => {
-      clearInterval(interval);
-      setIsUploading(false);
+      const mapped = mapBackendDocument(uploaded);
+      setDocuments((prev) => [mapped, ...prev]);
 
-      const categoryLabels: Record<string, string> = {
-        sk: "Surat Keputusan",
-        pendidikan: "Pendidikan Formal",
-        sertifikat: "Sertifikasi",
-        kependudukan: "Dokumen Pribadi",
-        skp: "Penilaian Kinerja",
-      };
-
-      const newDoc: UploadedDocument = {
-        id: `DOC-00${documents.length + 1}`,
-        title: formTitle,
-        documentNumber: formNumber || `DOK-${Date.now().toString().slice(-5)}`,
-        category: formCategory,
-        categoryLabel: categoryLabels[formCategory] || "Lainnya",
-        fileType: selectedFile.name.endsWith(".png") ? "PNG" : selectedFile.name.endsWith(".jpg") ? "JPG" : "PDF",
-        fileSize: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
-        uploadDate: "Baru saja",
-        effectiveDate: "2024",
-        status: "pending",
-        statusLabel: "Menunggu Validasi SDM",
-      };
-
-      setDocuments([newDoc, ...documents]);
+      // Reset Form
       setSelectedFile(null);
       setFormTitle("");
       setFormNumber("");
-      setUploadProgress(0);
+      setUploadProgress(100);
       setUploadSuccessAlert(true);
-      setTimeout(() => setUploadSuccessAlert(false), 4000);
-    }, 900);
+      setTimeout(() => setUploadSuccessAlert(false), 5000);
+    } catch (err) {
+      setUploadErrorAlert(err instanceof Error ? err.message : "Gagal mengunggah berkas");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   // Delete Document
-  const handleDeleteDocument = (id: string) => {
-    setDocuments(documents.filter((d) => d.id !== id));
-    setDeleteConfirmDoc(null);
+  const handleDeleteDocument = async (id: string) => {
+    const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!token) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteUserDocument(token, id);
+      setDocuments((prev) => prev.filter((d) => d.id !== id));
+      setDeleteConfirmDoc(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Gagal menghapus berkas");
+    } finally {
+      setIsDeleting(false);
+    }
   };
+
+  // Download Document
+  const handleDownload = (doc: UploadedDocument) => {
+    if (doc.signedUrl) {
+      window.open(doc.signedUrl, "_blank", "noopener,noreferrer");
+    } else {
+      alert("Tautan unduhan tidak tersedia atau telah kedaluwarsa.");
+    }
+  };
+
+  // Calculate stats
+  const totalBytes = documents.reduce((sum, d) => sum + (d.rawBytes || 0), 0);
+  const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+  const storagePct = Math.min(100, Math.round((totalBytes / (100 * 1024 * 1024)) * 100));
+
+  const userName = currentEmployee?.nama_lengkap || currentEmployee?.nama || userEmail.split("@")[0] || "Pegawai";
+  const userNip = currentEmployee?.nip || "Pegawai Terdaftar";
 
   return (
     <div className="min-h-screen bg-[#F8F9FF] text-[#121C2A] font-sans antialiased flex flex-col md:flex-row selection:bg-[#3366CC] selection:text-white">
-      {/* 1. SIDEBAR (User Sidebar Identik) */}
+      {/* 1. SIDEBAR */}
       <UserSidebar
         activePage="berkas"
         mobileMenuOpen={mobileMenuOpen}
@@ -309,7 +342,7 @@ export default function UnggahKelolaBerkasPage() {
                 </span>
               </h1>
               <p className="text-[11px] text-[#535F71]">
-                Arsip berkas resmi kepegawaian digital terintegrasi BSrE &amp; BKN
+                Arsip berkas resmi kepegawaian digital terintegrasi aman di cloud
               </p>
             </div>
           </div>
@@ -322,21 +355,25 @@ export default function UnggahKelolaBerkasPage() {
 
             {/* Profile Avatar */}
             <div className="flex items-center gap-2.5">
-              <div className="relative w-9 h-9 rounded-full ring-2 ring-[#094CB2]/20 overflow-hidden bg-slate-200 flex-shrink-0">
-                <Image
-                  src="/stitch-assets/siti-rahayu.png"
-                  alt="Siti Rahayu"
-                  fill
-                  sizes="36px"
-                  className="object-cover"
-                />
+              <div className="relative w-9 h-9 rounded-full ring-2 ring-[#094CB2]/20 overflow-hidden bg-slate-200 flex-shrink-0 flex items-center justify-center font-bold text-xs text-[#094CB2]">
+                {currentEmployee?.profile_image ? (
+                  <Image
+                    src={currentEmployee.profile_image}
+                    alt={userName}
+                    fill
+                    sizes="36px"
+                    className="object-cover"
+                  />
+                ) : (
+                  userName.slice(0, 2).toUpperCase()
+                )}
               </div>
               <div className="hidden sm:flex flex-col text-left">
                 <span className="font-bold text-xs text-[#121C2A] leading-tight">
-                  Siti Rahayu
+                  {userName}
                 </span>
                 <span className="text-[11px] text-[#535F71] leading-tight">
-                  NIP: 19890514 201504 2 001
+                  {userNip.startsWith("19") ? `NIP: ${userNip}` : userNip}
                 </span>
               </div>
             </div>
@@ -352,17 +389,44 @@ export default function UnggahKelolaBerkasPage() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center justify-between shadow-xs"
+                className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between shadow-xs"
               >
                 <div className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <div className="w-7 h-7 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
                   <span>
-                    Berkas berhasil diunggah! Dokumen kini berstatus <strong>Menunggu Validasi SDM</strong>.
+                    Berkas berhasil diunggah! Dokumen kini tersimpan di arsip digital Anda.
                   </span>
                 </div>
                 <button
                   onClick={() => setUploadSuccessAlert(false)}
                   className="text-emerald-600 hover:text-emerald-900"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Error Banner */}
+          <AnimatePresence>
+            {uploadErrorAlert && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between shadow-xs"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-xl bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0">
+                    <AlertCircle className="w-4 h-4" />
+                  </div>
+                  <span>{uploadErrorAlert}</span>
+                </div>
+                <button
+                  onClick={() => setUploadErrorAlert(null)}
+                  className="text-red-600 hover:text-red-900"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -406,11 +470,11 @@ export default function UnggahKelolaBerkasPage() {
             <div className="bg-white p-4.5 rounded-2xl border border-[#E2E8F0]/80 shadow-xs flex flex-col justify-between">
               <span className="text-xs font-medium text-[#535F71]">Kapasitas Penyimpanan</span>
               <div className="flex items-baseline justify-between mt-1">
-                <span className="text-2xl font-bold text-[#094CB2]">15.4 MB</span>
+                <span className="text-2xl font-bold text-[#094CB2]">{totalMB} MB</span>
                 <span className="text-[11px] font-semibold text-slate-500">/ 100 MB</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                <div className="bg-[#094CB2] h-full rounded-full" style={{ width: "15.4%" }} />
+                <div className="bg-[#094CB2] h-full rounded-full transition-all duration-500" style={{ width: `${storagePct}%` }} />
               </div>
             </div>
           </div>
@@ -451,7 +515,7 @@ export default function UnggahKelolaBerkasPage() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
                     onChange={handleFileSelect}
                     className="hidden"
                   />
@@ -512,6 +576,7 @@ export default function UnggahKelolaBerkasPage() {
                       placeholder="Contoh: SK Kenaikan Pangkat Penata Tingkat I (III/d)"
                       value={formTitle}
                       onChange={(e) => setFormTitle(e.target.value)}
+                      required
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F9FF] border border-slate-200 text-slate-800 focus:outline-none focus:border-blue-500"
                     />
                   </div>
@@ -519,149 +584,158 @@ export default function UnggahKelolaBerkasPage() {
 
                 {/* Upload Progress Bar if uploading */}
                 {isUploading && (
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex justify-between text-[11px] font-semibold text-slate-600">
-                      <span>Mengunggah dokumen ke peladen aman...</span>
+                  <div className="space-y-1 mt-1">
+                    <div className="flex justify-between text-[11px] text-slate-500 font-medium">
+                      <span>Mengunggah berkas ke server...</span>
                       <span>{uploadProgress}%</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-[#094CB2] h-full rounded-full transition-all duration-200"
+                        className="bg-[#094CB2] h-full rounded-full transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
                   </div>
                 )}
 
-                {/* Submit Action */}
-                <div className="pt-2 flex items-center justify-end gap-2.5">
-                  {selectedFile && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedFile(null);
-                        setFormTitle("");
-                        setFormNumber("");
-                      }}
-                      className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold transition-colors"
-                    >
-                      Batal
-                    </button>
+                <button
+                  type="submit"
+                  disabled={!selectedFile || !formTitle || isUploading}
+                  className="w-full mt-2 py-3 px-4 rounded-xl font-bold bg-[#094CB2] text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xs flex items-center justify-center gap-2"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sedang Mengunggah ({uploadProgress}%)...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="w-4 h-4" />
+                      <span>Unggah Berkas Sekarang</span>
+                    </>
                   )}
-                  <button
-                    type="submit"
-                    disabled={!selectedFile || !formTitle || isUploading}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#094CB2] text-white font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs transition-colors"
-                  >
-                    <UploadCloud className="w-4 h-4" />
-                    <span>{isUploading ? "Mengunggah..." : "Kirim & Simpan Dokumen"}</span>
-                  </button>
-                </div>
+                </button>
               </form>
             </motion.div>
 
-            {/* Right Guide & Verification Instructions (5 cols) */}
-            <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-[#E2E8F0]/80 shadow-xs flex flex-col justify-between gap-5">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                  <h3 className="text-base font-bold text-[#121C2A]">Ketentuan Berkas Resmi</h3>
+            {/* Panduan & Info Box (5 cols) */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="lg:col-span-5 bg-gradient-to-br from-[#094CB2] to-[#121C2A] text-white p-6 rounded-3xl shadow-sm flex flex-col justify-between"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm">Petunjuk Pengunggahan</h3>
+                    <p className="text-[11px] text-white/70">Standar Pengarsipan Dokumen Resmi Pusbanglin</p>
+                  </div>
                 </div>
 
-                <div className="space-y-3 text-xs text-[#535F71]">
-                  <div className="p-3.5 rounded-2xl bg-[#F8F9FF] border border-slate-100 flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-[#094CB2] flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">
-                      1
-                    </span>
-                    <p className="leading-relaxed">
-                      <strong>Hasil Pindai (Scan) Asli:</strong> Dokumen harus berasal dari dokumen asli berwarna atau salinan legalisir basah yang jelas.
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <p className="text-white/80">
+                      <strong>Dokumen Asli / Legalisir:</strong> Pastikan hasil pindai (scan) terlihat jelas dan tidak buram.
                     </p>
                   </div>
-
-                  <div className="p-3.5 rounded-2xl bg-[#F8F9FF] border border-slate-100 flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-[#094CB2] flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">
-                      2
-                    </span>
-                    <p className="leading-relaxed">
-                      <strong>Tanda Tangan Elektronik:</strong> Berkas SK ber-TTE resmi BKN/BSrE akan diverifikasi otomatis oleh sistem.
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <p className="text-white/80">
+                      <strong>Format File:</strong> Utamakan format PDF multi-halaman jika dokumen memiliki lampiran.
                     </p>
                   </div>
-
-                  <div className="p-3.5 rounded-2xl bg-[#F8F9FF] border border-slate-100 flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-[#094CB2] flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">
-                      3
-                    </span>
-                    <p className="leading-relaxed">
-                      <strong>Waktu Verifikasi:</strong> Dokumen yang baru diunggah akan diverifikasi oleh Admin Kepegawaian maksimal <strong>2x24 jam kerja</strong>.
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <p className="text-white/80">
+                      <strong>Kerahasiaan Terjamin:</strong> Seluruh berkas disimpan terenkripsi dan hanya dapat diakses oleh Anda dan Tim Kepegawaian resmi.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-[#EFF4FF] border border-blue-100 flex items-center gap-3 text-xs text-[#094CB2]">
-                <Info className="w-5 h-5 flex-shrink-0" />
-                <span className="text-[11px] leading-relaxed">
-                  Perlu bantuan verifikasi berkas khusus? Hubungi Subbagian Tata Usaha &amp; Kepegawaian Pusbanglin.
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-white/70">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-blue-300" /> Terenkripsi AES-256
                 </span>
+                <span>Pusbanglin Cloud Archive</span>
               </div>
-            </div>
+            </motion.div>
           </div>
 
-          {/* Section: Uploaded Documents Table & Filters */}
+          {/* Section: Document Archive Table & Filter */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-3xl border border-[#E2E8F0]/80 shadow-xs overflow-hidden"
+            transition={{ delay: 0.15 }}
+            className="bg-white rounded-3xl border border-[#E2E8F0]/80 shadow-xs overflow-hidden flex flex-col"
           >
-            {/* Filter and Search Bar */}
-            <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h3 className="text-base font-bold text-[#121C2A]">Daftar Berkas Terunggah</h3>
-                <p className="text-xs text-[#535F71] mt-0.5">Kelola berkas digital yang sudah tersimpan di pangkalan data</p>
+            {/* Table Header Filter Toolbar */}
+            <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-blue-50 text-[#094CB2]">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-sm text-[#121C2A]">Daftar Berkas Terunggah</h3>
+                <span className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-semibold">
+                  {documents.length} Berkas
+                </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 {/* Search Input */}
-                <div className="relative min-w-[220px]">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <div className="relative flex-1 sm:w-60">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Cari berkas atau nomor SK..."
+                    placeholder="Cari judul atau nomor..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-[#F8F9FF] text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-400"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-[#F8F9FF] border border-slate-200 text-slate-800 focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
-                {/* Category Filter */}
+                {/* Category Filter Select */}
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-3 py-2 bg-[#F8F9FF] text-xs font-semibold rounded-xl border border-slate-200 focus:outline-none text-slate-700 cursor-pointer"
+                  className="px-3 py-1.5 text-xs rounded-xl bg-[#F8F9FF] border border-slate-200 text-slate-700 font-medium focus:outline-none focus:border-blue-500"
                 >
                   <option value="all">Semua Kategori</option>
-                  <option value="sk">Surat Keputusan (SK)</option>
+                  <option value="sk">Surat Keputusan</option>
                   <option value="pendidikan">Pendidikan Formal</option>
-                  <option value="sertifikat">Sertifikasi &amp; Uji</option>
-                  <option value="skp">SKP &amp; Kinerja</option>
+                  <option value="sertifikat">Sertifikasi</option>
+                  <option value="kependudukan">Dokumen Pribadi</option>
+                  <option value="skp">Penilaian Kinerja</option>
                 </select>
               </div>
             </div>
 
-            {/* Document List Table */}
+            {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[700px]">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-[#F8F9FF] text-[#535F71] text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
-                    <th className="py-3.5 px-6">Nama Berkas</th>
-                    <th className="py-3.5 px-4">Kategori &amp; Nomor SK</th>
-                    <th className="py-3.5 px-4">Ukuran &amp; Tipe</th>
-                    <th className="py-3.5 px-4">Status Verifikasi</th>
+                  <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-500 bg-[#F8F9FF]/60 uppercase tracking-wider">
+                    <th className="py-3.5 px-6">Nama &amp; Tanggal Dokumen</th>
+                    <th className="py-3.5 px-4">Kategori &amp; Nomor</th>
+                    <th className="py-3.5 px-4">Ukuran</th>
+                    <th className="py-3.5 px-4">Status</th>
                     <th className="py-3.5 px-6 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {filteredDocuments.length > 0 ? (
+                  {isLoadingDocs ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-400 text-xs">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#094CB2]" />
+                        <span>Memuat arsip berkas Anda...</span>
+                      </td>
+                    </tr>
+                  ) : filteredDocuments.length > 0 ? (
                     filteredDocuments.map((doc) => (
                       <tr key={doc.id} className="hover:bg-[#F8F9FF]/80 transition-colors group">
                         {/* Title & Upload Date */}
@@ -724,7 +798,7 @@ export default function UnggahKelolaBerkasPage() {
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => alert(`Mengunduh berkas ${doc.title}...`)}
+                              onClick={() => handleDownload(doc)}
                               className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
                               title="Unduh Berkas"
                             >
@@ -743,8 +817,12 @@ export default function UnggahKelolaBerkasPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-10 text-center text-slate-400 text-xs">
-                        Tidak ada berkas yang cocok dengan pencarian atau filter ini.
+                      <td colSpan={5} className="py-12 text-center text-slate-400 text-xs">
+                        <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                        <p className="font-semibold text-slate-600">Belum ada berkas tersimpan</p>
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          Unggah berkas pertama Anda melalui formulir di atas.
+                        </p>
                       </td>
                     </tr>
                   )}
@@ -755,7 +833,7 @@ export default function UnggahKelolaBerkasPage() {
             {/* Footer Table Info */}
             <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between text-xs text-[#535F71]">
               <span>Menampilkan {filteredDocuments.length} dari {documents.length} total berkas</span>
-              <span className="text-[11px] text-slate-400">Pembaruan terakhir: Hari ini, 09:30 WIB</span>
+              <span className="text-[11px] text-slate-400">Pusbanglin Digital Storage</span>
             </div>
           </motion.div>
         </main>
@@ -769,14 +847,14 @@ export default function UnggahKelolaBerkasPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setPreviewDoc(null)}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 relative text-center"
+              className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 relative text-center max-h-[90vh] flex flex-col"
             >
               <button
                 onClick={() => setPreviewDoc(null)}
@@ -785,53 +863,57 @@ export default function UnggahKelolaBerkasPage() {
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3 font-bold text-sm">
-                {previewDoc.fileType}
-              </div>
-
-              <h3 className="text-base font-bold text-slate-900 mb-1">{previewDoc.title}</h3>
-              <p className="text-xs font-mono text-slate-500 mb-3">{previewDoc.documentNumber}</p>
-
-              <div className="p-3 bg-slate-50 rounded-2xl text-xs space-y-1.5 mb-4 text-left border border-slate-100">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Kategori:</span>
-                  <span className="font-semibold text-slate-800">{previewDoc.categoryLabel}</span>
+              <div className="flex items-center gap-3 text-left mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                  {previewDoc.fileType}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Ukuran Berkas:</span>
-                  <span className="font-semibold text-slate-800">{previewDoc.fileSize}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Tanggal Unggah:</span>
-                  <span className="font-semibold text-slate-800">{previewDoc.uploadDate}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Status Validasi:</span>
-                  <span className="font-semibold text-emerald-600">{previewDoc.statusLabel}</span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 leading-tight">{previewDoc.title}</h3>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">{previewDoc.documentNumber} • {previewDoc.categoryLabel} • {previewDoc.fileSize}</p>
                 </div>
               </div>
 
-              <div className="h-44 bg-slate-100 rounded-2xl flex flex-col items-center justify-center border border-dashed border-slate-300 text-xs text-slate-400 mb-5 gap-2">
-                <FileCheck className="w-8 h-8 text-slate-300" />
-                <span>Pratinjau Dokumen Digital Terautentikasi</span>
+              {/* Document Preview Box */}
+              <div className="flex-1 min-h-[300px] max-h-[460px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 relative mb-4 flex items-center justify-center">
+                {previewDoc.signedUrl ? (
+                  previewDoc.fileType === "PDF" ? (
+                    <iframe
+                      src={previewDoc.signedUrl}
+                      className="w-full h-full min-h-[360px]"
+                      title={previewDoc.title}
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={previewDoc.signedUrl}
+                      alt={previewDoc.title}
+                      className="max-h-[360px] w-auto max-w-full object-contain mx-auto"
+                    />
+                  )
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2 p-8 text-slate-400">
+                    <FileCheck className="w-12 h-12 text-slate-300" />
+                    <span className="text-xs">Pratinjau langsung tidak tersedia untuk berkas ini.</span>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-center gap-2.5">
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
                 <button
                   onClick={() => setPreviewDoc(null)}
                   className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
                   Tutup
                 </button>
-                <button
-                  onClick={() => {
-                    alert(`Mengunduh ${previewDoc.title}...`);
-                    setPreviewDoc(null);
-                  }}
-                  className="px-4 py-2 text-xs font-semibold bg-[#094CB2] text-white hover:bg-blue-700 rounded-xl shadow-xs"
-                >
-                  Unduh Dokumen
-                </button>
+                {previewDoc.signedUrl && (
+                  <button
+                    onClick={() => handleDownload(previewDoc)}
+                    className="px-4 py-2 text-xs font-semibold bg-[#094CB2] text-white hover:bg-blue-700 rounded-xl shadow-xs inline-flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Unduh Dokumen
+                  </button>
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -846,7 +928,7 @@ export default function UnggahKelolaBerkasPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setDeleteConfirmDoc(null)}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -860,20 +942,29 @@ export default function UnggahKelolaBerkasPage() {
               </div>
               <h3 className="text-base font-bold text-slate-900 mb-1">Hapus Berkas?</h3>
               <p className="text-xs text-slate-500 mb-5 leading-relaxed">
-                Apakah Anda yakin ingin menghapus <strong>&quot;{deleteConfirmDoc.title}&quot;</strong> dari arsip Anda?
+                Apakah Anda yakin ingin menghapus <strong>&quot;{deleteConfirmDoc.title}&quot;</strong> dari arsip Anda? Berkas akan dihapus permanen dari server.
               </p>
               <div className="flex items-center justify-center gap-2">
                 <button
                   onClick={() => setDeleteConfirmDoc(null)}
+                  disabled={isDeleting}
                   className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
                   Batal
                 </button>
                 <button
                   onClick={() => handleDeleteDocument(deleteConfirmDoc.id)}
-                  className="px-4 py-2 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 rounded-xl shadow-xs"
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 rounded-xl shadow-xs inline-flex items-center gap-1.5"
                 >
-                  Ya, Hapus
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Menghapus...</span>
+                    </>
+                  ) : (
+                    <span>Ya, Hapus</span>
+                  )}
                 </button>
               </div>
             </motion.div>

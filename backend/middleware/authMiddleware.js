@@ -70,21 +70,29 @@ const authenticate = async (req, res, next) => {
         }
 
         // Cari data pegawai berdasarkan auth_user_id
-        const { data: employee, error: employeeError } =
+        let { data: employee, error: employeeError } =
             await supabaseUser
                 .from("employees")
                 .select("*")
                 .eq("auth_user_id", user.id)
                 .maybeSingle();
 
-        if (employeeError) {
-            console.error("Employee lookup error:", employeeError);
+        // Fallback: Jika belum terhubung auth_user_id, cari berdasarkan email pengguna
+        if (!employee && user.email) {
+            const { data: empByEmail } = await supabaseUser
+                .from("employees")
+                .select("*")
+                .ilike("email", user.email)
+                .maybeSingle();
 
-            return res.status(500).json({
-                success: false,
-                message: "Gagal mencari data pegawai",
-                error: employeeError.message
-            });
+            if (empByEmail) {
+                employee = empByEmail;
+                // Sinkronkan auth_user_id agar request berikutnya langsung terhubung
+                await supabaseUser
+                    .from("employees")
+                    .update({ auth_user_id: user.id })
+                    .eq("id", empByEmail.id);
+            }
         }
 
         // Simpan informasi ke request

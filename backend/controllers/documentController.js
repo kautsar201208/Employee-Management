@@ -18,12 +18,27 @@ const getSupabaseClient = (accessToken) => {
 
 
 // =====================================================
-// KATEGORI DOKUMEN YANG DIPERBOLEHKAN
+// KATEGORI DOKUMEN YANG DIPERBOLEHKAN & NORMALISASI
 // =====================================================
-const allowedCategories = [
-    "Sertifikat Pelatihan dan Uji",
-    "Surat Keputusan"
-];
+const categoryMap = {
+    sk: "Surat Keputusan",
+    pendidikan: "Pendidikan Formal",
+    sertifikat: "Sertifikat Pelatihan dan Uji",
+    kependudukan: "Dokumen Kependudukan",
+    skp: "Penilaian Kinerja",
+};
+
+const normalizeCategory = (input) => {
+    if (!input) return "Surat Keputusan";
+    const lower = input.toLowerCase().trim();
+    if (categoryMap[lower]) return categoryMap[lower];
+    if (lower.includes("sk") || lower.includes("keputusan")) return "Surat Keputusan";
+    if (lower.includes("ijazah") || lower.includes("pendidikan") || lower.includes("transkrip")) return "Pendidikan Formal";
+    if (lower.includes("sertifikat") || lower.includes("sertifikasi")) return "Sertifikat Pelatihan dan Uji";
+    if (lower.includes("ktp") || lower.includes("kependudukan") || lower.includes("kk")) return "Dokumen Kependudukan";
+    if (lower.includes("skp") || lower.includes("kinerja")) return "Penilaian Kinerja";
+    return input;
+};
 
 
 // =====================================================
@@ -46,6 +61,7 @@ const uploadCertificate = async (req, res) => {
         const allowedMimeTypes = [
             "image/jpeg",
             "image/png",
+            "image/webp",
             "application/pdf"
         ];
 
@@ -58,23 +74,9 @@ const uploadCertificate = async (req, res) => {
 
 
         // =================================================
-        // VALIDASI KATEGORI
+        // NORMALISASI KATEGORI
         // =================================================
-        const { kategori } = req.body;
-
-        if (!kategori) {
-            return res.status(400).json({
-                success: false,
-                message: "Kategori dokumen wajib dipilih"
-            });
-        }
-
-        if (!allowedCategories.includes(kategori)) {
-            return res.status(400).json({
-                success: false,
-                message: "Kategori dokumen tidak valid"
-            });
-        }
+        const kategori = normalizeCategory(req.body.kategori || req.body.category);
 
 
         // =================================================
@@ -82,19 +84,29 @@ const uploadCertificate = async (req, res) => {
         // =================================================
         let employeeId;
 
+        const supabase = getSupabaseClient(req.accessToken);
 
-        // USER
-        // User hanya bisa upload dokumen miliknya sendiri
+        // USER: Hanya bisa upload dokumen miliknya sendiri
         if (req.role === "user") {
-
             if (!req.employee) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Akun belum terhubung dengan data pegawai"
-                });
-            }
+                const { data: emp } = await supabase
+                    .from("employees")
+                    .select("*")
+                    .or(`auth_user_id.eq.${req.user.id},email.eq.${req.user.email}`)
+                    .maybeSingle();
 
-            employeeId = req.employee.id;
+                if (emp) {
+                    req.employee = emp;
+                    employeeId = emp.id;
+                } else {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Akun belum terhubung dengan data pegawai"
+                    });
+                }
+            } else {
+                employeeId = req.employee.id;
+            }
         }
 
 
@@ -139,10 +151,6 @@ const uploadCertificate = async (req, res) => {
         const filePath = `${employeeId}/${fileName}`;
 
 
-        // =================================================
-        // SUPABASE CLIENT
-        // =================================================
-        const supabase = getSupabaseClient(req.accessToken);
 
 
         // =================================================
@@ -171,12 +179,14 @@ const uploadCertificate = async (req, res) => {
         // =================================================
         // SIMPAN METADATA KE DATABASE
         // =================================================
+        const displayTitle = req.body.title || req.body.nama_file || originalName;
+
         const { data, error: documentError } = await supabase
             .from("employee_documents")
             .insert([
                 {
                     employee_id: employeeId,
-                    nama_file: originalName,
+                    nama_file: displayTitle,
                     kategori: kategori,
                     file_path: filePath,
                     file_type: req.file.mimetype,
@@ -207,13 +217,26 @@ const uploadCertificate = async (req, res) => {
         }
 
 
+        // Buat signed URL agar langsung bisa diakses/dipreview
+        let signedUrl = null;
+        try {
+            const { data: signedData } = await supabase
+                .storage
+                .from("employee-certificates")
+                .createSignedUrl(filePath, 3600);
+            if (signedData) signedUrl = signedData.signedUrl;
+        } catch (e) {}
+
         // =================================================
         // RESPONSE
         // =================================================
         return res.status(201).json({
             success: true,
             message: "Dokumen berhasil diupload",
-            data: data
+            data: {
+                ...data,
+                signed_url: signedUrl
+            }
         });
 
     } catch (error) {
@@ -248,10 +271,23 @@ const getDocuments = async (req, res) => {
         if (req.role === "user") {
 
             if (!req.employee) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Akun belum terhubung dengan data pegawai"
-                });
+                // Coba cari fallback
+                const { data: emp } = await supabase
+                    .from("employees")
+                    .select("*")
+                    .or(`auth_user_id.eq.${req.user.id},email.eq.${req.user.email}`)
+                    .maybeSingle();
+
+                if (emp) {
+                    req.employee = emp;
+                } else {
+                    return res.status(200).json({
+                        success: true,
+                        message: "Belum ada dokumen",
+                        total: 0,
+                        data: []
+                    });
+                }
             }
 
             query = query.eq(

@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { ACCESS_TOKEN_KEY, USER_EMAIL_KEY } from "@/lib/api";
+import { ACCESS_TOKEN_KEY, USER_EMAIL_KEY, USER_ROLE_KEY } from "@/lib/api";
 
 function getInitials(email: string) {
   const localPart = email.split("@")[0] || "";
@@ -29,8 +29,14 @@ export default function Navbar() {
   const email = useSyncExternalStore(subscribeToEmail, getEmailSnapshot, getServerEmailSnapshot);
 
   function handleLogout() {
+    // Hapus sessionStorage
     sessionStorage.removeItem(ACCESS_TOKEN_KEY);
     sessionStorage.removeItem(USER_EMAIL_KEY);
+    sessionStorage.removeItem(USER_ROLE_KEY);
+
+    // Hapus cookie role agar middleware tidak redirect balik ke dashboard
+    document.cookie = "pusbanglin_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+
     router.replace("/auth/login");
   }
 

@@ -1,10 +1,12 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import UserSidebar from "../_components/user-sidebar";
+import { ACCESS_TOKEN_KEY, USER_EMAIL_KEY, USER_ROLE_KEY } from "@/lib/api";
 import {
   User,
   MapPin,
@@ -21,6 +23,7 @@ import {
   BadgeCheck,
   PenLine,
   CheckCircle2,
+  LogOut,
 } from "lucide-react";
 
 const employee = {
@@ -100,8 +103,18 @@ const employee = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [todayFormatted, setTodayFormatted] = useState("Rabu, 30 September 2026");
+
+  function handleLogout() {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    sessionStorage.removeItem(USER_EMAIL_KEY);
+    sessionStorage.removeItem(USER_ROLE_KEY);
+    // Hapus cookie role agar middleware tidak redirect balik
+    document.cookie = "pusbanglin_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    router.replace("/auth/login");
+  }
 
   useEffect(() => {
     try {
@@ -161,6 +174,14 @@ export default function ProfilePage() {
                 <span className="text-[11px] text-slate-500 leading-tight">Peneliti Ahli Muda</span>
               </div>
             </div>
+            <button
+              onClick={handleLogout}
+              title="Keluar dari akun"
+              className="flex items-center gap-1.5 ml-1 px-3 py-2 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs font-semibold border border-slate-200 hover:border-red-200"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Keluar</span>
+            </button>
           </div>
         </header>
 

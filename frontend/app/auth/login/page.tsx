@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { ACCESS_TOKEN_KEY, USER_EMAIL_KEY, loginWithBackend } from "@/lib/api";
+import { ACCESS_TOKEN_KEY, USER_EMAIL_KEY, USER_ROLE_KEY, loginWithBackend } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,10 +21,20 @@ export default function LoginPage() {
     const password = String(formData.get("password") || "");
 
     try {
-      const accessToken = await loginWithBackend(email, password);
+      const { accessToken, role } = await loginWithBackend(email, password);
       sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
       sessionStorage.setItem(USER_EMAIL_KEY, email);
-      router.replace("/dashboard");
+      sessionStorage.setItem(USER_ROLE_KEY, role);
+
+      // Simpan role ke cookie agar Next.js middleware bisa membacanya
+      document.cookie = `pusbanglin_role=${role}; path=/; SameSite=Lax`;
+
+      // Redirect berdasarkan role
+      if (role === "admin") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/Homepage/Profile");
+      }
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Login gagal. Silakan coba lagi.");
     } finally {
@@ -66,7 +76,7 @@ export default function LoginPage() {
                 <input name="remember" type="checkbox" />
                 Ingat saya
               </label>
-              <a className="text-link" href="#forgot-password">Lupa kata sandi?</a>
+              <Link className="text-link" href="/auth/forgot-password">Lupa kata sandi?</Link>
             </div>
             {error && <p className="auth-error" role="alert">{error}</p>}
             <button className="primary-button" disabled={isSubmitting} type="submit">

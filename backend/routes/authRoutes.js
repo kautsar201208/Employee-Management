@@ -5,7 +5,8 @@ const {
     login,
     forgotPassword,
     getProfile,
-    getMyEmployee
+    getMyEmployee,
+    updatePassword
 } = require("../controllers/authController");
 
 const authenticate = require("../middleware/authMiddleware");
@@ -17,5 +18,6 @@ router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
 router.get("/profile", authenticate, getProfile);
 router.get("/me", authenticate, getMyEmployee);
+router.post("/update-password", updatePassword);
 
 module.exports = router;

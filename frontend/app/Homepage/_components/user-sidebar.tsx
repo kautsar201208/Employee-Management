@@ -3,8 +3,10 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { User, FileUp, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { User, FileUp, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ACCESS_TOKEN_KEY, USER_EMAIL_KEY, USER_ROLE_KEY } from "@/lib/api";
 
 export type UserSidebarActivePage = "profil" | "berkas";
 
@@ -33,6 +35,16 @@ export default function UserSidebar({
       icon: FileUp,
     },
   ];
+
+  const router = useRouter();
+
+  function handleLogout() {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    sessionStorage.removeItem(USER_EMAIL_KEY);
+    sessionStorage.removeItem(USER_ROLE_KEY);
+    document.cookie = "pusbanglin_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    router.replace("/auth/login");
+  }
 
   return (
     <>
@@ -77,6 +89,16 @@ export default function UserSidebar({
         </nav>
 
         <div className="sidebar-bottom">
+          <button
+            onClick={handleLogout}
+            className="nav-item w-full text-left text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors mb-2"
+            aria-label="Keluar dari akun"
+          >
+            <span className="nav-symbol" aria-hidden="true">
+              <LogOut size={20} strokeWidth={1.8} />
+            </span>
+            Keluar
+          </button>
           <div className="sidebar-org-footer">
             <span>
               <strong>Pusat Pengembangan dan Pelindungan Bahasa dan Sastra</strong>
@@ -160,6 +182,16 @@ export default function UserSidebar({
               </div>
 
               <div className="sidebar-bottom">
+                <button
+                  onClick={() => { onCloseMobileMenu?.(); handleLogout(); }}
+                  className="nav-item w-full text-left text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors mb-2"
+                  aria-label="Keluar dari akun"
+                >
+                  <span className="nav-symbol" aria-hidden="true">
+                    <LogOut size={20} strokeWidth={1.8} />
+                  </span>
+                  Keluar
+                </button>
                 <div className="sidebar-org-footer">
                   <span>
                     <strong>Pusat Pengembangan dan Pelindungan Bahasa dan Sastra</strong>

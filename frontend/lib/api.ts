@@ -10,6 +10,7 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
 export const ACCESS_TOKEN_KEY = "pusbanglin_access_token";
 export const USER_EMAIL_KEY = "pusbanglin_user_email";
+export const USER_ROLE_KEY = "pusbanglin_user_role";
 
 type ApiResponse<T> = {
   success: boolean;
@@ -59,7 +60,10 @@ async function readApiResponse<T>(response: Response): Promise<ApiResponse<T>> {
   return result;
 }
 
-export async function loginWithBackend(email: string, password: string): Promise<string> {
+export async function loginWithBackend(
+  email: string,
+  password: string
+): Promise<{ accessToken: string; role: string }> {
   let response: Response;
 
   try {
@@ -72,14 +76,28 @@ export async function loginWithBackend(email: string, password: string): Promise
     throw new Error(`Backend tidak dapat dihubungi di ${API_BASE_URL}.`);
   }
 
-  const result = await readApiResponse<never>(response);
-  const accessToken = result.session?.access_token;
+  const result = await readApiResponse<{ role?: string }>(response);
+  const accessToken = (result as unknown as { session?: { access_token?: string } }).session?.access_token;
 
   if (!accessToken) {
     throw new Error("Login berhasil, tetapi backend tidak mengirim access token.");
   }
 
-  return accessToken;
+  // Ambil role dari endpoint /api/auth/me
+  let role = "user";
+  try {
+    const meRes = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const meData = await meRes.json().catch(() => null);
+    if (meData?.data?.role) {
+      role = meData.data.role;
+    }
+  } catch {
+    // fallback ke "user" jika endpoint belum ada
+  }
+
+  return { accessToken, role };
 }
 
 export async function getEmployees(accessToken: string, signal?: AbortSignal): Promise<ApiEmployee[]> {
@@ -212,4 +230,99 @@ export async function getDashboardSummary(accessToken: string, signal?: AbortSig
   }
 
   return result.data;
+}
+
+export type DocumentItem = {
+  id: string;
+  employee_id: string;
+  nama_file: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  created_at: string;
+  updated_at?: string;
+  kategori: string;
+  signed_url?: string | null;
+};
+
+export type AccountInfo = {
+  role: string;
+  employee: ApiEmployee | null;
+};
+
+export async function getMyAccount(accessToken: string): Promise<AccountInfo> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (res.status === 401) {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    throw new Error("Sesi login tidak valid.");
+  }
+  const json = await res.json().catch(() => null);
+  return json?.data || { role: "user", employee: null };
+}
+
+export async function getUserDocuments(accessToken: string): Promise<DocumentItem[]> {
+  const res = await fetch(`${API_BASE_URL}/api/documents`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (res.status === 401) {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    throw new Error("Sesi login telah berakhir. Silakan masuk kembali.");
+  }
+  const json = await res.json().catch(() => null);
+  if (!json?.success) {
+    throw new Error(json?.message || "Gagal mengambil data berkas.");
+  }
+  return Array.isArray(json.data) ? json.data : [];
+}
+
+export async function uploadUserDocument(
+  accessToken: string,
+  formData: FormData,
+  onProgress?: (pct: number) => void
+): Promise<DocumentItem> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_BASE_URL}/api/documents/upload`);
+    xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
+
+    if (xhr.upload && onProgress) {
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          onProgress(pct);
+        }
+      };
+    }
+
+    xhr.onload = () => {
+      try {
+        const json = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && json.success) {
+          resolve(json.data);
+        } else {
+          reject(new Error(json.message || `Gagal mengunggah berkas (${xhr.status})`));
+        }
+      } catch {
+        reject(new Error("Format respon server tidak valid."));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error("Gagal terhubung ke server backend."));
+    xhr.send(formData);
+  });
+}
+
+export async function deleteUserDocument(accessToken: string, id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/api/documents/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json?.success) {
+    throw new Error(json?.message || "Gagal menghapus berkas.");
+  }
 }
