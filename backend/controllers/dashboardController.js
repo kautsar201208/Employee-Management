@@ -1,5 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 
+
 // Membuat koneksi Supabase berdasarkan token user
 const getSupabaseClient = (accessToken) => {
     return createClient(
@@ -16,15 +17,62 @@ const getSupabaseClient = (accessToken) => {
 };
 
 
+// =====================================================
 // GET DATA DASHBOARD
+// =====================================================
 const getDashboard = async (req, res) => {
     try {
         const supabase = getSupabaseClient(req.accessToken);
 
-        // Mengambil seluruh data pegawai
-        const { data, error } = await supabase
+        let query = supabase
             .from("employees")
             .select("tim_kerja");
+
+
+        // =================================================
+        // ADMIN
+        // Admin dapat melihat statistik seluruh pegawai
+        // =================================================
+        if (req.role === "admin") {
+            // Tidak perlu filter
+        }
+
+
+        // =================================================
+        // USER
+        // User hanya melihat statistik dirinya sendiri
+        // =================================================
+        else if (req.role === "user") {
+
+            if (!req.employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Akun belum terhubung dengan data pegawai"
+                });
+            }
+
+            query = query.eq(
+                "auth_user_id",
+                req.user.id
+            );
+        }
+
+
+        // =================================================
+        // ROLE TIDAK DIKENALI
+        // =================================================
+        else {
+            return res.status(403).json({
+                success: false,
+                message: "Role user tidak dikenali"
+            });
+        }
+
+
+        // =================================================
+        // AMBIL DATA
+        // =================================================
+        const { data, error } = await query;
 
         if (error) {
             console.log("SUPABASE ERROR:", error);
@@ -36,7 +84,10 @@ const getDashboard = async (req, res) => {
             });
         }
 
-        // Menghitung jumlah berdasarkan Tim Kerja
+
+        // =================================================
+        // HITUNG JUMLAH
+        // =================================================
         const totalPegawai = data.length;
 
         const totalTU = data.filter(
@@ -59,6 +110,10 @@ const getDashboard = async (req, res) => {
             (employee) => employee.tim_kerja === "Kepala Pusat"
         ).length;
 
+
+        // =================================================
+        // RESPONSE
+        // =================================================
         return res.status(200).json({
             success: true,
             message: "Data dashboard berhasil diambil",
@@ -71,6 +126,7 @@ const getDashboard = async (req, res) => {
                 total_Kepala_Pusat: totalKepalaPusat
             }
         });
+
 
     } catch (error) {
         console.error("Get dashboard error:", error);

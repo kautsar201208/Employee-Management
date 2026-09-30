@@ -12,6 +12,7 @@ const {
 } = require("../controllers/employeeController");
 
 const authenticate = require("../middleware/authMiddleware");
+const adminOnly = require("../middleware/adminMiddleware");
 
 
 // SEARCH PEGAWAI
@@ -23,15 +24,18 @@ router.get("/filter", authenticate, filterEmployees);
 
 
 // TAMBAH PEGAWAI
-router.post("/", authenticate, createEmployee);
+// Hanya admin
+router.post("/", authenticate, adminOnly, createEmployee);
 
 
 // UPDATE / EDIT PEGAWAI
-router.put("/:id", authenticate, updateEmployee);
+// Hanya admin
+router.put("/:id", authenticate, adminOnly, updateEmployee);
 
 
 // DELETE / HAPUS PEGAWAI
-router.delete("/:id", authenticate, deleteEmployee);
+// Hanya admin
+router.delete("/:id", authenticate, adminOnly, deleteEmployee);
 
 
 // GET SEMUA PEGAWAI

@@ -1,6 +1,5 @@
 const { createClient } = require("@supabase/supabase-js");
 
-// Membuat koneksi Supabase berdasarkan token user
 const getSupabaseClient = (accessToken) => {
     return createClient(
         process.env.SUPABASE_URL,
@@ -16,15 +15,44 @@ const getSupabaseClient = (accessToken) => {
 };
 
 
-// GET SEMUA PEGAWAI
+// =====================================================
+// GET SEMUA DATA PEGAWAI
+// =====================================================
 const getEmployees = async (req, res) => {
     try {
         const supabase = getSupabaseClient(req.accessToken);
 
-        const { data, error } = await supabase
+        let query = supabase
             .from("employees")
-            .select("*")
-            .order("no", { ascending: true });
+            .select("*");
+
+        // ADMIN → melihat semua pegawai
+        if (req.role === "admin") {
+            query = query.order("no", { ascending: true });
+        }
+
+        // USER → hanya melihat data pegawainya sendiri
+        else if (req.role === "user") {
+            if (!req.employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Akun belum terhubung dengan data pegawai"
+                });
+            }
+
+            query = query
+                .eq("auth_user_id", req.user.id)
+                .order("no", { ascending: true });
+        }
+
+        else {
+            return res.status(403).json({
+                success: false,
+                message: "Role user tidak dikenali"
+            });
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.log("SUPABASE ERROR:", error);
@@ -55,26 +83,59 @@ const getEmployees = async (req, res) => {
 };
 
 
-// GET DETAIL PEGAWAI BERDASARKAN ID
+// =====================================================
+// GET DATA PEGAWAI BERDASARKAN ID
+// =====================================================
 const getEmployeeById = async (req, res) => {
     try {
         const { id } = req.params;
 
         const supabase = getSupabaseClient(req.accessToken);
 
-        const { data, error } = await supabase
+        let query = supabase
             .from("employees")
             .select("*")
-            .eq("id", id)
-            .single();
+            .eq("id", id);
+
+        // USER → hanya boleh membuka data pegawainya sendiri
+        if (req.role === "user") {
+            if (!req.employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Akun belum terhubung dengan data pegawai"
+                });
+            }
+
+            query = query.eq(
+                "auth_user_id",
+                req.user.id
+            );
+        }
+
+        // ADMIN → boleh membuka data pegawai mana saja
+        else if (req.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Role user tidak dikenali"
+            });
+        }
+
+        const { data, error } = await query.maybeSingle();
 
         if (error) {
             console.log("SUPABASE ERROR:", error);
 
+            return res.status(500).json({
+                success: false,
+                message: "Gagal mengambil detail pegawai",
+                error: error.message
+            });
+        }
+
+        if (!data) {
             return res.status(404).json({
                 success: false,
-                message: "Data pegawai tidak ditemukan",
-                error: error.message
+                message: "Data pegawai tidak ditemukan"
             });
         }
 
@@ -96,7 +157,9 @@ const getEmployeeById = async (req, res) => {
 };
 
 
-// SEARCH PEGAWAI
+// =====================================================
+// SEARCH DATA PEGAWAI
+// =====================================================
 const searchEmployees = async (req, res) => {
     try {
         const { q } = req.query;
@@ -112,12 +175,37 @@ const searchEmployees = async (req, res) => {
 
         const supabase = getSupabaseClient(req.accessToken);
 
-        const { data, error } = await supabase
+        let query = supabase
             .from("employees")
             .select("*")
             .or(
                 `nama_lengkap.ilike.%${keyword}%,nip.ilike.%${keyword}%,jabatan.ilike.%${keyword}%,tim_kerja.ilike.%${keyword}%`
-            )
+            );
+
+        // USER → pencarian hanya pada data miliknya
+        if (req.role === "user") {
+            if (!req.employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Akun belum terhubung dengan data pegawai"
+                });
+            }
+
+            query = query.eq(
+                "auth_user_id",
+                req.user.id
+            );
+        }
+
+        // ADMIN → mencari seluruh pegawai
+        else if (req.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Role user tidak dikenali"
+            });
+        }
+
+        const { data, error } = await query
             .order("no", { ascending: true });
 
         if (error) {
@@ -149,7 +237,9 @@ const searchEmployees = async (req, res) => {
 };
 
 
-// FILTER PEGAWAI
+// =====================================================
+// FILTER DATA PEGAWAI
+// =====================================================
 const filterEmployees = async (req, res) => {
     try {
         const {
@@ -180,7 +270,33 @@ const filterEmployees = async (req, res) => {
         }
 
         if (jenis_jabatan) {
-            query = query.eq("jenis_jabatan", jenis_jabatan);
+            query = query.eq(
+                "jenis_jabatan",
+                jenis_jabatan
+            );
+        }
+
+        // USER → filter hanya data miliknya
+        if (req.role === "user") {
+            if (!req.employee) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Akun belum terhubung dengan data pegawai"
+                });
+            }
+
+            query = query.eq(
+                "auth_user_id",
+                req.user.id
+            );
+        }
+
+        // ADMIN → boleh filter seluruh pegawai
+        else if (req.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Role user tidak dikenali"
+            });
         }
 
         const { data, error } = await query
@@ -215,7 +331,10 @@ const filterEmployees = async (req, res) => {
 };
 
 
-// TAMBAH PEGAWAI
+// =====================================================
+// TAMBAH DATA PEGAWAI
+// ADMIN ONLY
+// =====================================================
 const createEmployee = async (req, res) => {
     try {
         const {
@@ -310,7 +429,10 @@ const createEmployee = async (req, res) => {
 };
 
 
-// UPDATE / EDIT PEGAWAI
+// =====================================================
+// UPDATE DATA PEGAWAI
+// ADMIN ONLY
+// =====================================================
 const updateEmployee = async (req, res) => {
     try {
         const { id } = req.params;
@@ -407,7 +529,10 @@ const updateEmployee = async (req, res) => {
 };
 
 
-// DELETE / HAPUS PEGAWAI
+// =====================================================
+// HAPUS DATA PEGAWAI
+// ADMIN ONLY
+// =====================================================
 const deleteEmployee = async (req, res) => {
     try {
         const { id } = req.params;
