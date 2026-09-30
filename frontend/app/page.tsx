@@ -1,5 +1,1 @@
-import { redirect } from "next/navigation";
-
-export default function Home() {
-  redirect("/auth/login");
-}
+export { default } from "./Homepage/page";

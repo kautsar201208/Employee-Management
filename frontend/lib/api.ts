@@ -41,7 +41,7 @@ export type ApiEmployee = {
   profile_image?: string | null;
   nomor_ktp?: string | null;
   nomor_ponsel?: string | null;
-  profile_image: string | null;
+  
 };
 
 export type EmployeeInput = Omit<ApiEmployee, "id" | "no" | "nama_lengkap" | "nip"> & {
