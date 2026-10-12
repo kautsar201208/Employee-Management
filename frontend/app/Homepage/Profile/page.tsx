@@ -75,6 +75,16 @@ function getInitials(name?: string | null): string {
     .toUpperCase();
 }
 
+// ====== Helper: format tim kerja tanpa singkatan
+function formatTimKerja(value?: string | null): string {
+  if (!value) return "-";
+  const trimmed = value.trim();
+  if (trimmed === "TU") return "Tata Usaha";
+  if (trimmed === "KI") return "Perkamusan dan Peristilahan";
+  if (trimmed === "Molin") return "Pemodernan dan Pelindungan";
+  return trimmed;
+}
+
 // ====== Komponen: Baris info
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -355,7 +365,7 @@ export default function ProfilePage() {
                           <span className="hidden sm:inline text-slate-300">·</span>
                           <span className="flex items-center gap-1">
                             <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                            {employee.tim_kerja}
+                            {formatTimKerja(employee.tim_kerja)}
                           </span>
                         </>
                       )}
@@ -531,7 +541,7 @@ export default function ProfilePage() {
                         <InfoRow label="Jenis Jabatan" value={employee.jenis_jabatan} />
                         <InfoRow label="Pangkat / Golongan" value={employee.pangkat_golongan} />
                         <InfoRow label="TMT Golongan" value={employee.tmt_golongan} />
-                        <InfoRow label="Tim Kerja / Unit" value={employee.tim_kerja} />
+                        <InfoRow label="Tim Kerja / Unit" value={formatTimKerja(employee.tim_kerja)} />
                         <InfoRow label="Status Kepegawaian" value={employee.status} />
                       </div>
                     </div>

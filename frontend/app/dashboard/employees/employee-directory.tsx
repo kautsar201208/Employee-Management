@@ -90,6 +90,24 @@ function createEmptyEmployeeForm(): EmployeeFormValues {
   };
 }
 
+function formatTimKerja(value?: string | null): string {
+  if (!value) return "—";
+  const trimmed = value.trim();
+  if (trimmed === "TU") return "Tata Usaha";
+  if (trimmed === "KI") return "Perkamusan dan Peristilahan";
+  if (trimmed === "Molin") return "Pemodernan dan Pelindungan";
+  return trimmed;
+}
+
+function normalizeTimKerjaForm(value?: string | null): string {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (trimmed === "TU") return "Tata Usaha";
+  if (trimmed === "KI") return "Perkamusan dan Peristilahan";
+  if (trimmed === "Molin") return "Pemodernan dan Pelindungan";
+  return trimmed;
+}
+
 function toEmployeeForm(employee: ApiEmployee): EmployeeFormValues {
   const dateValue = (value?: string | null) => value?.slice(0, 10) || "";
 
@@ -99,7 +117,7 @@ function toEmployeeForm(employee: ApiEmployee): EmployeeFormValues {
     email: employee.email || "",
     jabatan: employee.jabatan || "",
     jenis_jabatan: employee.jenis_jabatan || "",
-    tim_kerja: employee.tim_kerja || "",
+    tim_kerja: normalizeTimKerjaForm(employee.tim_kerja),
     status: employee.status || "",
     pangkat_golongan: employee.pangkat_golongan || "",
     tmt_golongan: dateValue(employee.tmt_golongan),
@@ -124,7 +142,7 @@ function toEmployeeInput(values: EmployeeFormValues): EmployeeInput {
     email: optionalValue(values.email),
     jabatan: optionalValue(values.jabatan),
     jenis_jabatan: optionalValue(values.jenis_jabatan),
-    tim_kerja: optionalValue(values.tim_kerja),
+    tim_kerja: optionalValue(normalizeTimKerjaForm(values.tim_kerja)),
     status: optionalValue(values.status),
     pangkat_golongan: optionalValue(values.pangkat_golongan),
     tmt_golongan: optionalValue(values.tmt_golongan),
@@ -170,7 +188,7 @@ function toEmployeeRow(employee: ApiEmployee, index: number): EmployeeRow {
     name,
     email: employee.email || "—",
     role: employee.jabatan || employee.jenis_jabatan || "—",
-    department: employee.tim_kerja || "—",
+    department: formatTimKerja(employee.tim_kerja),
     status: employee.status || employee.jenis_jabatan || "—",
     joined: employee.tmt_golongan || "—",
     initials: initials || "?",
@@ -1331,7 +1349,7 @@ export default function EmployeeDirectory() {
                 <div>
                   <dt>Tim Kerja</dt>
                   <dd>
-                    {selectedProfile.tim_kerja || "—"}
+                    {formatTimKerja(selectedProfile.tim_kerja)}
                   </dd>
                 </div>
 
@@ -1479,29 +1497,59 @@ export default function EmployeeDirectory() {
                           : ""}
                       </span>
 
-                      <input
-                        autoComplete="off"
-                        id={`employee-${field.key}`}
-                        onChange={(event) =>
-                          setEmployeeForm(
-                            (current) => ({
+                      {field.key === "tim_kerja" ? (
+                        <select
+                          autoComplete="off"
+                          id={`employee-${field.key}`}
+                          onChange={(event) =>
+                            setEmployeeForm((current) => ({
                               ...current,
-                              [field.key]:
-                                event.target
-                                  .value,
-                            }),
-                          )
-                        }
-                        required={field.required}
-                        type={
-                          field.type || "text"
-                        }
-                        value={
-                          employeeForm[
-                            field.key
-                          ]
-                        }
-                      />
+                              [field.key]: event.target.value,
+                            }))
+                          }
+                          required={field.required}
+                          value={employeeForm[field.key]}
+                          style={{
+                            width: "100%",
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            border: "1px solid #d1d5db",
+                            backgroundColor: "#fff",
+                            fontSize: "14px",
+                          }}
+                        >
+                          <option value="">Pilih Tim Kerja</option>
+                          <option value="Tata Usaha">Tata Usaha</option>
+                          <option value="Perkamusan dan Peristilahan">Perkamusan dan Peristilahan</option>
+                          <option value="Pemodernan dan Pelindungan">Pemodernan dan Pelindungan</option>
+                          <option value="Bidang">Bidang</option>
+                          <option value="Kepala Pusat">Kepala Pusat</option>
+                        </select>
+                      ) : (
+                        <input
+                          autoComplete="off"
+                          id={`employee-${field.key}`}
+                          onChange={(event) =>
+                            setEmployeeForm(
+                              (current) => ({
+                                ...current,
+                                [field.key]:
+                                  event.target
+                                    .value,
+                              }),
+                            )
+                          }
+                          required={field.required}
+                          type={
+                            field.type || "text"
+                          }
+                          value={
+                            employeeForm[
+                              field.key
+                            ]
+                          }
+                        />
+                      )}
                     </label>
                   ),
                 )}

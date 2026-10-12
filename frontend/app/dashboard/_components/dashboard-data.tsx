@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Briefcase,
   Search,
+  UserCheck,
 } from "lucide-react";
 import {
   ACCESS_TOKEN_KEY,
@@ -176,6 +177,11 @@ export default function DashboardData() {
         if (rawVal === "L") rawVal = "Laki-laki";
         if (rawVal === "P") rawVal = "Perempuan";
       }
+      if (activeCategory === "tim_kerja") {
+        if (rawVal === "TU") rawVal = "Tata Usaha";
+        if (rawVal === "KI") rawVal = "Perkamusan dan Peristilahan";
+        if (rawVal === "Molin") rawVal = "Pemodernan dan Pelindungan";
+      }
 
       const val = rawVal && rawVal !== "-" ? rawVal : "Belum diisi";
       counts[val] = (counts[val] || 0) + 1;
@@ -228,16 +234,14 @@ export default function DashboardData() {
   }, [categoryBreakdown, employees.length]);
 
   // Statistik Ringkasan Atas
-  const topStats = useMemo(() => {
-    // 1. Jenis Kelamin
+  const topMetrics = useMemo(() => {
     let lakiCount = 0;
     let perempuanCount = 0;
-    // 2. Status PNS / PPPK
     let pnsCount = 0;
     let pppkCount = 0;
-    // 3. Jenis Jabatan Fungsional
     let fungsionalCount = 0;
     let pelaksanaCount = 0;
+    let strukturalCount = 0;
 
     for (const emp of employees) {
       const jk = (emp.jenis_kelamin || "").toLowerCase();
@@ -246,39 +250,39 @@ export default function DashboardData() {
 
       const st = (emp.status || "").toLowerCase();
       if (st.includes("pns")) pnsCount++;
-      if (st.includes("pppk")) pppkCount++;
+      else if (st.includes("pppk")) pppkCount++;
 
       const jj = (emp.jenis_jabatan || "").toLowerCase();
       if (jj.includes("fungsional")) fungsionalCount++;
-      if (jj.includes("pelaksana")) pelaksanaCount++;
+      else if (jj.includes("pelaksana")) pelaksanaCount++;
+      else if (jj.includes("struktural")) strukturalCount++;
     }
 
-    return [
-      {
-        label: "Total Pegawai",
-        value: totalEmployees.toLocaleString("id-ID"),
-        sublabel: "Pegawai Aktif Terdata",
-        icon: "♙",
+    const otherStatusCount = Math.max(0, totalEmployees - pnsCount - pppkCount);
+
+    return {
+      totalEmployees,
+      gender: {
+        perempuan: perempuanCount,
+        laki: lakiCount,
+        perempuanPercent: totalEmployees ? Math.round((perempuanCount / totalEmployees) * 100) : 0,
+        lakiPercent: totalEmployees ? Math.round((lakiCount / totalEmployees) * 100) : 0,
       },
-      {
-        label: "Jenis Kelamin",
-        value: `${perempuanCount} P • ${lakiCount} L`,
-        sublabel: `${perempuanCount} Perempuan, ${lakiCount} Laki-laki`,
-        icon: "🚻",
+      status: {
+        pns: pnsCount,
+        pppk: pppkCount,
+        other: otherStatusCount,
+        pnsPercent: totalEmployees ? Math.round((pnsCount / totalEmployees) * 100) : 0,
+        pppkPercent: totalEmployees ? Math.round((pppkCount / totalEmployees) * 100) : 0,
       },
-      {
-        label: "Status Kepegawaian",
-        value: `${pnsCount} PNS • ${pppkCount} PPPK`,
-        sublabel: `${pnsCount} PNS & ${pppkCount} Pegawai PPPK`,
-        icon: "✓",
+      jabatan: {
+        fungsional: fungsionalCount,
+        pelaksana: pelaksanaCount,
+        struktural: strukturalCount,
+        fungsionalPercent: totalEmployees ? Math.round((fungsionalCount / totalEmployees) * 100) : 0,
+        pelaksanaPercent: totalEmployees ? Math.round((pelaksanaCount / totalEmployees) * 100) : 0,
       },
-      {
-        label: "Jenis Jabatan",
-        value: `${fungsionalCount} Fungsional`,
-        sublabel: `${pelaksanaCount} Pelaksana / Lainnya`,
-        icon: "▦",
-      },
-    ];
+    };
   }, [employees, totalEmployees]);
 
 
@@ -339,34 +343,250 @@ export default function DashboardData() {
         aria-label="Ringkasan karyawan"
         variants={staggerVariants}
       >
-        {topStats.map((stat) => (
-          <motion.article
-            className="home-stat-card"
-            key={stat.label}
-            variants={fadeUpVariants}
-            whileHover={shouldReduceMotion ? undefined : { y: -2 }}
-          >
-            <div className="home-stat-top">
-              <div>
-                <span className="home-stat-label">{stat.label}</span>
-                <strong className="home-stat-value">{stat.value}</strong>
-                <small
-                  style={{
-                    display: "block",
-                    fontSize: "10px",
-                    color: "var(--muted)",
-                    marginTop: "3px",
-                  }}
-                >
-                  {stat.sublabel}
-                </small>
-              </div>
-              <span className="home-stat-icon" aria-hidden="true">
-                {stat.icon}
+        {/* KARTU 1: TOTAL PEGAWAI */}
+        <motion.article
+          className="home-stat-card"
+          variants={fadeUpVariants}
+          whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Total Pegawai
+            </span>
+            <span
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: "#eff6ff", color: "#3366cc" }}
+              aria-hidden="true"
+            >
+              <Users size={18} />
+            </span>
+          </div>
+
+          <div className="my-1.5">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-3xl font-black text-[#0d1b2e] tracking-tight">
+                {topMetrics.totalEmployees.toLocaleString("id-ID")}
               </span>
+              <span className="text-xs font-semibold text-slate-400">orang</span>
             </div>
-          </motion.article>
-        ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Pegawai Aktif Terdata di Sistem</span>
+          </div>
+        </motion.article>
+
+        {/* KARTU 2: JENIS KELAMIN */}
+        <motion.article
+          className="home-stat-card"
+          variants={fadeUpVariants}
+          whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Jenis Kelamin
+            </span>
+            <span
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: "#faf5ff", color: "#8b5cf6" }}
+              aria-hidden="true"
+            >
+              <UserCheck size={18} />
+            </span>
+          </div>
+
+          <div className="my-1.5 flex items-center gap-3">
+            <div>
+              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+                {topMetrics.gender.perempuan}
+              </div>
+              <div className="text-[11px] font-medium text-[#ec4899] flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#ec4899]" />
+                Perempuan ({topMetrics.gender.perempuanPercent}%)
+              </div>
+            </div>
+            <div className="h-7 w-px bg-slate-200" />
+            <div>
+              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+                {topMetrics.gender.laki}
+              </div>
+              <div className="text-[11px] font-medium text-[#3366cc] flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#3366cc]" />
+                Laki-laki ({topMetrics.gender.lakiPercent}%)
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+            <div
+              style={{ width: `${topMetrics.gender.perempuanPercent}%`, backgroundColor: "#ec4899" }}
+              title={`Perempuan: ${topMetrics.gender.perempuan}`}
+            />
+            <div
+              style={{ width: `${topMetrics.gender.lakiPercent}%`, backgroundColor: "#3366cc" }}
+              title={`Laki-laki: ${topMetrics.gender.laki}`}
+            />
+          </div>
+        </motion.article>
+
+        {/* KARTU 3: STATUS KEPEGAWAIAN */}
+        <motion.article
+          className="home-stat-card"
+          variants={fadeUpVariants}
+          whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Status Kepegawaian
+            </span>
+            <span
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: "#ecfdf5", color: "#10b981" }}
+              aria-hidden="true"
+            >
+              <BadgeCheck size={18} />
+            </span>
+          </div>
+
+          <div className="my-1.5 flex items-center gap-3">
+            <div>
+              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+                {topMetrics.status.pns}
+              </div>
+              <div className="text-[11px] font-medium text-emerald-700 flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                PNS ({topMetrics.status.pnsPercent}%)
+              </div>
+            </div>
+            <div className="h-7 w-px bg-slate-200" />
+            <div>
+              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+                {topMetrics.status.pppk}
+              </div>
+              <div className="text-[11px] font-medium text-amber-700 flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                PPPK ({topMetrics.status.pppkPercent}%)
+              </div>
+            </div>
+            {topMetrics.status.other > 0 && (
+              <>
+                <div className="h-7 w-px bg-slate-200" />
+                <div>
+                  <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+                    {topMetrics.status.other}
+                  </div>
+                  <div className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    Lainnya
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+            <div
+              style={{ width: `${topMetrics.status.pnsPercent}%`, backgroundColor: "#10b981" }}
+              title={`PNS: ${topMetrics.status.pns}`}
+            />
+            <div
+              style={{ width: `${topMetrics.status.pppkPercent}%`, backgroundColor: "#f59e0b" }}
+              title={`PPPK: ${topMetrics.status.pppk}`}
+            />
+            {topMetrics.status.other > 0 && (
+              <div
+                style={{
+                  width: `${Math.max(2, 100 - topMetrics.status.pnsPercent - topMetrics.status.pppkPercent)}%`,
+                  backgroundColor: "#94a3b8",
+                }}
+                title={`Lainnya: ${topMetrics.status.other}`}
+              />
+            )}
+          </div>
+        </motion.article>
+
+        {/* KARTU 4: JENIS JABATAN */}
+        <motion.article
+          className="home-stat-card"
+          variants={fadeUpVariants}
+          whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Jenis Jabatan
+            </span>
+            <span
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: "#fffbeb", color: "#d97706" }}
+              aria-hidden="true"
+            >
+              <Briefcase size={18} />
+            </span>
+          </div>
+
+          <div className="my-1.5 flex items-center gap-2.5">
+            <div>
+              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+                {topMetrics.jabatan.fungsional}
+              </div>
+              <div className="text-[11px] font-medium text-[#3366cc] flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#3366cc]" />
+                Fungsional
+              </div>
+            </div>
+            <div className="h-7 w-px bg-slate-200" />
+            <div>
+              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+                {topMetrics.jabatan.pelaksana}
+              </div>
+              <div className="text-[11px] font-medium text-teal-700 flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                Pelaksana
+              </div>
+            </div>
+            {topMetrics.jabatan.struktural > 0 && (
+              <>
+                <div className="h-7 w-px bg-slate-200" />
+                <div>
+                  <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+                    {topMetrics.jabatan.struktural}
+                  </div>
+                  <div className="text-[11px] font-medium text-purple-700 flex items-center gap-1 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                    Struktural
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+            <div
+              style={{
+                width: `${topMetrics.jabatan.fungsionalPercent}%`,
+                backgroundColor: "#3366cc",
+              }}
+              title={`Fungsional: ${topMetrics.jabatan.fungsional}`}
+            />
+            <div
+              style={{
+                width: `${topMetrics.jabatan.pelaksanaPercent}%`,
+                backgroundColor: "#14b8a6",
+              }}
+              title={`Pelaksana: ${topMetrics.jabatan.pelaksana}`}
+            />
+            {topMetrics.jabatan.struktural > 0 && (
+              <div
+                style={{
+                  width: `${Math.max(2, 100 - topMetrics.jabatan.fungsionalPercent - topMetrics.jabatan.pelaksanaPercent)}%`,
+                  backgroundColor: "#8b5cf6",
+                }}
+                title={`Struktural: ${topMetrics.jabatan.struktural}`}
+              />
+            )}
+          </div>
+        </motion.article>
       </motion.section>
 
       {/* 3. DYNAMIC DEMOGRAPHIC & STATISTICAL BREAKDOWN */}

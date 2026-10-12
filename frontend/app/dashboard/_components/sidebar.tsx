@@ -1,9 +1,9 @@
-import { House, UsersRound } from "lucide-react";
+import { House, UsersRound, FolderKanban } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 type SidebarProps = {
-  activePage: "dashboard" | "employees";
+  activePage: "dashboard" | "employees" | "documents";
 };
 
 export default function Sidebar({ activePage }: SidebarProps) {
@@ -23,6 +23,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
       <nav className="side-nav" aria-label="Navigasi utama">
         <Link className={`nav-item${activePage === "dashboard" ? " active" : ""}`} href="/dashboard" aria-current={activePage === "dashboard" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><House size={20} strokeWidth={1.8} /></span>Beranda</Link>
         <Link className={`nav-item${activePage === "employees" ? " active" : ""}`} href="/dashboard/employees" aria-current={activePage === "employees" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><UsersRound size={20} strokeWidth={1.8} /></span>Data Karyawan</Link>
+        <Link className={`nav-item${activePage === "documents" ? " active" : ""}`} href="/dashboard/documents" aria-current={activePage === "documents" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><FolderKanban size={20} strokeWidth={1.8} /></span>Berkas Pegawai</Link>
       </nav>
       <div className="sidebar-bottom">
         <div className="sidebar-org-footer">

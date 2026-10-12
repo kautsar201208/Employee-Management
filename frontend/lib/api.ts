@@ -243,6 +243,8 @@ export type DocumentItem = {
   updated_at?: string;
   kategori: string;
   signed_url?: string | null;
+  employee?: ApiEmployee | null;
+  pegawai?: ApiEmployee | null;
 };
 
 export type AccountInfo = {

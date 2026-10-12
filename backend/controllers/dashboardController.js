@@ -91,15 +91,15 @@ const getDashboard = async (req, res) => {
         const totalPegawai = data.length;
 
         const totalTU = data.filter(
-            (employee) => employee.tim_kerja === "TU"
+            (employee) => employee.tim_kerja === "TU" || employee.tim_kerja === "Tata Usaha"
         ).length;
 
         const totalMolin = data.filter(
-            (employee) => employee.tim_kerja === "Molin"
+            (employee) => employee.tim_kerja === "Molin" || employee.tim_kerja === "Pemodernan dan Pelindungan"
         ).length;
 
         const totalKI = data.filter(
-            (employee) => employee.tim_kerja === "KI"
+            (employee) => employee.tim_kerja === "KI" || employee.tim_kerja === "Perkamusan dan Peristilahan"
         ).length;
 
         const totalBidang = data.filter(
@@ -123,7 +123,10 @@ const getDashboard = async (req, res) => {
                 total_Molin: totalMolin,
                 total_KI: totalKI,
                 total_Bidang: totalBidang,
-                total_Kepala_Pusat: totalKepalaPusat
+                total_Kepala_Pusat: totalKepalaPusat,
+                total_Tata_Usaha: totalTU,
+                total_Pemodernan_Pelindungan: totalMolin,
+                total_Perkamusan_Peristilahan: totalKI
             }
         });
 

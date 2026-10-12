@@ -1039,15 +1039,16 @@ input {
   flex-direction: column;
   justify-content: space-between;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 17px;
+  border-radius: 12px;
+  padding: 16px 18px;
   background: #fff;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
 .home-stat-card:hover {
   border-color: #c8d7f5;
-  box-shadow: 0 5px 18px rgb(38 79 168 / 7%);
+  box-shadow: 0 6px 20px rgb(38 79 168 / 8%);
 }
 
 .home-stat-top {

@@ -334,42 +334,56 @@ const getDocuments = async (req, res) => {
 
 
         // =================================================
-        // MEMBUAT SIGNED URL
+        // AMBIL DATA PEGAWAI TERKAIT
         // =================================================
-        const documentsWithUrl = [];
+        const employeeIds = [...new Set(data.map((d) => d.employee_id).filter(Boolean))];
+        const employeeMap = {};
+        if (employeeIds.length > 0) {
+            const { data: emps, error: empErr } = await supabase
+                .from("employees")
+                .select("id, nama_lengkap, nama, nip, tim_kerja, jabatan, jenis_jabatan, profile_image, email")
+                .in("id", employeeIds);
 
-        for (const document of data) {
-
-            const { data: signedUrlData, error: signedUrlError } =
-                await supabase
-                    .storage
-                    .from("employee-certificates")
-                    .createSignedUrl(
-                        document.file_path,
-                        3600
-                    );
-
-
-            if (signedUrlError) {
-                console.error(
-                    "Signed URL error:",
-                    signedUrlError
-                );
-
-                documentsWithUrl.push({
-                    ...document,
-                    signed_url: null
+            if (!empErr && emps) {
+                emps.forEach((emp) => {
+                    employeeMap[emp.id] = emp;
                 });
-
-                continue;
             }
-
-
-            documentsWithUrl.push({
-                ...document,
-                signed_url: signedUrlData.signedUrl
-            });
         }
+
+        // =================================================
+        // MEMBUAT SIGNED URL SECARA PARALEL
+        // =================================================
+        const documentsWithUrl = await Promise.all(
+            data.map(async (document) => {
+                let signedUrl = null;
+                try {
+                    const { data: signedUrlData, error: signedUrlError } =
+                        await supabase
+                            .storage
+                            .from("employee-certificates")
+                            .createSignedUrl(
+                                document.file_path,
+                                3600
+                            );
+
+                    if (!signedUrlError && signedUrlData) {
+                        signedUrl = signedUrlData.signedUrl;
+                    }
+                } catch (err) {
+                    console.error("Signed URL error for", document.id, err);
+                }
+
+                const emp = employeeMap[document.employee_id] || null;
+
+                return {
+                    ...document,
+                    signed_url: signedUrl,
+                    employee: emp,
+                    pegawai: emp
+                };
+            })
+        );
 
 
         // =================================================
