@@ -3,14 +3,16 @@ const fs = require("fs");
 const dotenv = require("dotenv");
 const { createClient } = require("@supabase/supabase-js");
 
-// Load .env
+// =====================================================
+// LOAD ENV
+// =====================================================
 dotenv.config({
     path: path.join(__dirname, "../.env"),
 });
 
-// ===============================
+// =====================================================
 // KONFIGURASI
-// ===============================
+// =====================================================
 const BUCKET = "employee-profiles";
 
 const PHOTOS_FOLDER = path.join(
@@ -18,22 +20,29 @@ const PHOTOS_FOLDER = path.join(
     "../../employee-photos"
 );
 
-// ===============================
+// Format gambar yang didukung
+const SUPPORTED_EXTENSIONS = [
+    ".png",
+    ".jpg",
+    ".jpeg",
+];
+
+// =====================================================
 // CEK ENV
-// ===============================
+// =====================================================
 if (!process.env.SUPABASE_URL) {
-    console.error("❌ SUPABASE_URL tidak ditemukan");
+    console.error("❌ SUPABASE_URL tidak ditemukan di backend/.env");
     process.exit(1);
 }
 
 if (!process.env.SUPABASE_SECRET_KEY) {
-    console.error("❌ SUPABASE_SECRET_KEY tidak ditemukan");
+    console.error("❌ SUPABASE_SECRET_KEY tidak ditemukan di backend/.env");
     process.exit(1);
 }
 
-// ===============================
+// =====================================================
 // SUPABASE CLIENT
-// ===============================
+// =====================================================
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SECRET_KEY,
@@ -45,9 +54,9 @@ const supabase = createClient(
     }
 );
 
-// ===============================
+// =====================================================
 // NORMALISASI NAMA
-// ===============================
+// =====================================================
 function normalizeName(name) {
     return name
         .trim()
@@ -55,54 +64,124 @@ function normalizeName(name) {
         .replace(/\s+/g, " ");
 }
 
-// ===============================
-// MAIN
-// ===============================
-async function main() {
-    console.log("========================================");
-    console.log("   BULK UPLOAD FOTO EMPLOYEE");
-    console.log("========================================");
+// =====================================================
+// CONTENT TYPE
+// =====================================================
+function getContentType(extension) {
+    switch (extension) {
+        case ".png":
+            return "image/png";
 
-    // ===============================
-    // CEK FOLDER
-    // ===============================
+        case ".jpg":
+            return "image/jpeg";
+
+        case ".jpeg":
+            return "image/jpeg";
+
+        default:
+            return null;
+    }
+}
+
+// =====================================================
+// MAIN
+// =====================================================
+async function main() {
+    console.log("");
+    console.log("========================================");
+    console.log("      BULK UPLOAD FOTO EMPLOYEE");
+    console.log("========================================");
+    console.log("");
+
+    console.log("📁 Folder foto:");
+    console.log(PHOTOS_FOLDER);
+
+    console.log("");
+    console.log("📦 Format yang didukung:");
+    console.log("   ✅ PNG");
+    console.log("   ✅ JPG");
+    console.log("   ✅ JPEG");
+
+    console.log("");
+    console.log("----------------------------------------");
+
+    // =================================================
+    // CEK FOLDER FOTO
+    // =================================================
     if (!fs.existsSync(PHOTOS_FOLDER)) {
-        console.error("❌ Folder foto tidak ditemukan:");
+        console.error("❌ Folder employee-photos tidak ditemukan!");
+        console.error("");
+        console.error("Lokasi yang dicari:");
         console.error(PHOTOS_FOLDER);
+
         process.exit(1);
     }
 
-    // ===============================
-    // AMBIL SEMUA FILE PNG
-    // ===============================
+    // =================================================
+    // AMBIL SEMUA FOTO
+    // =================================================
     const files = fs
         .readdirSync(PHOTOS_FOLDER)
         .filter((file) => {
-            return path.extname(file).toLowerCase() === ".png";
+            const extension = path
+                .extname(file)
+                .toLowerCase();
+
+            return SUPPORTED_EXTENSIONS.includes(
+                extension
+            );
         });
 
+    // =================================================
+    // CEK JUMLAH FOTO
+    // =================================================
     if (files.length === 0) {
-        console.error("❌ Tidak ada file PNG di folder:");
+        console.error("");
+        console.error(
+            "❌ Tidak ada foto PNG/JPG/JPEG di folder!"
+        );
+        console.error("");
+        console.error(
+            "Masukkan foto ke:"
+        );
         console.error(PHOTOS_FOLDER);
+
         process.exit(1);
     }
 
-    console.log(`📁 Ditemukan ${files.length} foto`);
+    console.log(
+        `📸 Ditemukan ${files.length} foto`
+    );
+
     console.log("----------------------------------------");
 
-    // ===============================
+    // =================================================
     // AMBIL DATA EMPLOYEE
-    // ===============================
-    console.log("🔍 Mengambil data employee dari database...");
+    // =================================================
+    console.log(
+        "🔍 Mengambil data employee dari database..."
+    );
 
-    const { data: employees, error: employeeError } =
-        await supabase
-            .from("employees")
-            .select("id, nama, nip, profile_image");
+    const {
+        data: employees,
+        error: employeeError,
+    } = await supabase
+        .from("employees")
+        .select(
+            "id, nama, nip, profile_image"
+        );
 
+    // =================================================
+    // CEK ERROR DATABASE
+    // =================================================
     if (employeeError) {
-        console.error("❌ Gagal mengambil data employee:");
+        console.error("");
+        console.error(
+            "❌ Gagal mengambil data employee:"
+        );
+
         console.error(employeeError);
+
         process.exit(1);
     }
 
@@ -112,51 +191,86 @@ async function main() {
 
     console.log("----------------------------------------");
 
-    // ===============================
-    // BUAT MAP NAMA → EMPLOYEE
-    // ===============================
+    // =================================================
+    // BUAT MAP EMPLOYEE
+    // =================================================
     const employeeMap = new Map();
 
     for (const employee of employees) {
-        if (!employee.nama) continue;
+        if (!employee.nama) {
+            continue;
+        }
 
-        const normalized = normalizeName(employee.nama);
+        const normalizedName = normalizeName(
+            employee.nama
+        );
 
-        employeeMap.set(normalized, employee);
+        employeeMap.set(
+            normalizedName,
+            employee
+        );
     }
 
-    // ===============================
-    // HASIL
-    // ===============================
+    // =================================================
+    // ARRAY HASIL
+    // =================================================
     const success = [];
     const notFound = [];
     const failed = [];
 
-    // ===============================
-    // PROSES FOTO SATU PER SATU
-    // ===============================
+    // =================================================
+    // PROSES SEMUA FOTO
+    // =================================================
     for (const fileName of files) {
         console.log("");
         console.log("========================================");
-        console.log(`📸 Memproses: ${fileName}`);
+        console.log(
+            `📸 Memproses: ${fileName}`
+        );
+        console.log("========================================");
 
-        // Hilangkan extension .png
+        // =================================================
+        // EXTENSION
+        // =================================================
+        const extension = path
+            .extname(fileName)
+            .toLowerCase();
+
+        // =================================================
+        // NAMA FILE TANPA EXTENSION
+        // =================================================
         const nameWithoutExtension = path.basename(
             fileName,
             path.extname(fileName)
         );
 
+        console.log(
+            `👤 Nama file: ${nameWithoutExtension}`
+        );
+
+        // =================================================
+        // NORMALISASI NAMA
+        // =================================================
         const normalizedName = normalizeName(
             nameWithoutExtension
         );
 
-        // ===============================
+        // =================================================
         // CARI EMPLOYEE
-        // ===============================
-        const employee = employeeMap.get(normalizedName);
+        // =================================================
+        const employee = employeeMap.get(
+            normalizedName
+        );
 
+        // =================================================
+        // JIKA EMPLOYEE TIDAK DITEMUKAN
+        // =================================================
         if (!employee) {
-            console.log("⚠️ Employee tidak ditemukan");
+            console.log("");
+            console.log(
+                "⚠️ EMPLOYEE TIDAK DITEMUKAN"
+            );
+
             console.log(
                 `Nama yang dicari: "${nameWithoutExtension}"`
             );
@@ -169,121 +283,306 @@ async function main() {
             continue;
         }
 
-        console.log("✅ Employee ditemukan");
-        console.log("Nama :", employee.nama);
-        console.log("NIP  :", employee.nip);
+        // =================================================
+        // EMPLOYEE DITEMUKAN
+        // =================================================
+        console.log("");
+        console.log(
+            "✅ Employee ditemukan"
+        );
 
-        // ===============================
-        // BACA FILE
-        // ===============================
+        console.log(
+            `Nama : ${employee.nama}`
+        );
+
+        console.log(
+            `NIP  : ${employee.nip}`
+        );
+
+        // =================================================
+        // CEK NIP
+        // =================================================
+        if (!employee.nip) {
+            console.log("");
+            console.log(
+                "❌ Employee tidak memiliki NIP"
+            );
+
+            failed.push({
+                file: fileName,
+                name: employee.nama,
+                reason: "NIP kosong",
+            });
+
+            continue;
+        }
+
+        // =================================================
+        // FILE LOKAL
+        // =================================================
         const localFilePath = path.join(
             PHOTOS_FOLDER,
             fileName
         );
 
+        // =================================================
+        // BACA FILE
+        // =================================================
         let fileBuffer;
 
         try {
-            fileBuffer = fs.readFileSync(localFilePath);
+            fileBuffer = fs.readFileSync(
+                localFilePath
+            );
         } catch (error) {
-            console.log("❌ Gagal membaca file");
+            console.log("");
+            console.log(
+                "❌ Gagal membaca file lokal"
+            );
+
+            console.log(
+                error.message
+            );
 
             failed.push({
                 file: fileName,
                 name: employee.nama,
-                reason: "Gagal membaca file lokal",
+                nip: employee.nip,
+                reason:
+                    "Gagal membaca file lokal",
             });
 
             continue;
         }
 
-        // ===============================
-        // STORAGE PATH
-        // ===============================
-        const storagePath = `${employee.nip}.png`;
+        // =================================================
+        // CEK UKURAN FILE
+        // =================================================
+        if (!fileBuffer || fileBuffer.length === 0) {
+            console.log("");
+            console.log(
+                "❌ File kosong"
+            );
 
+            failed.push({
+                file: fileName,
+                name: employee.nama,
+                nip: employee.nip,
+                reason: "File kosong",
+            });
+
+            continue;
+        }
+
+        console.log("");
+        console.log(
+            `📦 Ukuran: ${fileBuffer.length} bytes`
+        );
+
+        // =================================================
+        // CONTENT TYPE
+        // =================================================
+        const contentType =
+            getContentType(extension);
+
+        if (!contentType) {
+            console.log("");
+            console.log(
+                `❌ Format tidak didukung: ${extension}`
+            );
+
+            failed.push({
+                file: fileName,
+                name: employee.nama,
+                nip: employee.nip,
+                reason:
+                    `Format tidak didukung: ${extension}`,
+            });
+
+            continue;
+        }
+
+        console.log(
+            `🖼️ Content-Type: ${contentType}`
+        );
+
+        // =================================================
+        // STORAGE PATH
+        // =================================================
+        const storagePath =
+            `${employee.nip}${extension}`;
+
+        console.log("");
         console.log(
             `📤 Upload ke Storage: ${storagePath}`
         );
 
-        // ===============================
-        // UPLOAD
-        // ===============================
-        const { data: uploadData, error: uploadError } =
-            await supabase.storage
-                .from(BUCKET)
-                .upload(storagePath, fileBuffer, {
-                    contentType: "image/png",
-                    cacheControl: "3600",
-                    upsert: true,
-                });
+        // =================================================
+        // UPLOAD KE SUPABASE STORAGE
+        // =================================================
+        const {
+            data: uploadData,
+            error: uploadError,
+        } = await supabase.storage
+            .from(BUCKET)
+            .upload(
+                storagePath,
+                fileBuffer,
+                {
+                    contentType:
+                        contentType,
 
+                    cacheControl:
+                        "3600",
+
+                    upsert:
+                        true,
+                }
+            );
+
+        // =================================================
+        // CEK ERROR UPLOAD
+        // =================================================
         if (uploadError) {
-            console.log("❌ Upload gagal");
-            console.log(uploadError);
+            console.log("");
+            console.log(
+                "❌ UPLOAD GAGAL"
+            );
+
+            console.log(
+                uploadError
+            );
 
             failed.push({
                 file: fileName,
                 name: employee.nama,
                 nip: employee.nip,
-                reason: uploadError.message,
+                reason:
+                    uploadError.message,
             });
 
             continue;
         }
 
-        console.log("✅ Upload berhasil");
+        console.log("");
+        console.log(
+            "✅ Upload berhasil!"
+        );
 
-        // ===============================
+        console.log(
+            `Storage path: ${uploadData.path}`
+        );
+
+        // =================================================
         // PUBLIC URL
-        // ===============================
-        const { data: publicUrlData } =
-            supabase.storage
-                .from(BUCKET)
-                .getPublicUrl(storagePath);
+        // =================================================
+        const {
+            data: publicUrlData,
+        } = supabase.storage
+            .from(BUCKET)
+            .getPublicUrl(
+                storagePath
+            );
 
-        const publicUrl = publicUrlData.publicUrl;
+        const publicUrl =
+            publicUrlData.publicUrl;
 
-        console.log("🌐 URL:");
-        console.log(publicUrl);
+        console.log("");
+        console.log(
+            "🌐 Public URL:"
+        );
 
-        // ===============================
+        console.log(
+            publicUrl
+        );
+
+        // =================================================
         // UPDATE DATABASE
-        // ===============================
-        const { error: updateError } =
-            await supabase
-                .from("employees")
-                .update({
-                    profile_image: publicUrl,
-                })
-                .eq("id", employee.id);
+        // =================================================
+        console.log("");
+        console.log(
+            "🗄️ Mengupdate employees.profile_image..."
+        );
 
+        const {
+            data: updatedEmployee,
+            error: updateError,
+        } = await supabase
+            .from("employees")
+            .update({
+                profile_image:
+                    publicUrl,
+            })
+            .eq(
+                "id",
+                employee.id
+            )
+            .select(
+                "id, nama, nip, profile_image"
+            )
+            .single();
+
+        // =================================================
+        // CEK ERROR DATABASE
+        // =================================================
         if (updateError) {
-            console.log("❌ Database gagal diupdate");
-            console.log(updateError);
+            console.log("");
+            console.log(
+                "❌ DATABASE GAGAL DIUPDATE"
+            );
+
+            console.log(
+                updateError
+            );
 
             failed.push({
                 file: fileName,
                 name: employee.nama,
                 nip: employee.nip,
-                reason: updateError.message,
+                reason:
+                    updateError.message,
             });
 
             continue;
         }
 
-        console.log("✅ Database berhasil diupdate");
+        // =================================================
+        // DATABASE BERHASIL
+        // =================================================
+        console.log("");
+        console.log(
+            "✅ Database berhasil diupdate!"
+        );
 
+        console.log(
+            `Nama : ${updatedEmployee.nama}`
+        );
+
+        console.log(
+            `NIP  : ${updatedEmployee.nip}`
+        );
+
+        console.log(
+            `Foto : ${updatedEmployee.profile_image}`
+        );
+
+        // =================================================
+        // SIMPAN SUCCESS
+        // =================================================
         success.push({
             file: fileName,
             name: employee.nama,
             nip: employee.nip,
+            storagePath:
+                storagePath,
+            publicUrl:
+                publicUrl,
         });
     }
 
-    // ===============================
+    // =====================================================
     // RINGKASAN
-    // ===============================
+    // =====================================================
     console.log("");
     console.log("");
     console.log("========================================");
@@ -291,62 +590,131 @@ async function main() {
     console.log("========================================");
 
     console.log("");
-    console.log(`✅ Berhasil : ${success.length}`);
-    console.log(`⚠️ Tidak ditemukan : ${notFound.length}`);
-    console.log(`❌ Gagal : ${failed.length}`);
 
-    // ===============================
-    // SUCCESS
-    // ===============================
+    console.log(
+        `📸 Total foto diproses : ${files.length}`
+    );
+
+    console.log(
+        `✅ Berhasil            : ${success.length}`
+    );
+
+    console.log(
+        `⚠️ Tidak ditemukan     : ${notFound.length}`
+    );
+
+    console.log(
+        `❌ Gagal               : ${failed.length}`
+    );
+
+    // =====================================================
+    // BERHASIL
+    // =====================================================
     if (success.length > 0) {
         console.log("");
-        console.log("========== BERHASIL ==========");
+        console.log("========================================");
+        console.log("              BERHASIL");
+        console.log("========================================");
 
         for (const item of success) {
             console.log(
-                `✅ ${item.file} → ${item.name} → ${item.nip}`
+                `✅ ${item.file}`
             );
+
+            console.log(
+                `   Nama    : ${item.name}`
+            );
+
+            console.log(
+                `   NIP     : ${item.nip}`
+            );
+
+            console.log(
+                `   Storage : ${item.storagePath}`
+            );
+
+            console.log(
+                `   URL     : ${item.publicUrl}`
+            );
+
+            console.log("");
         }
     }
 
-    // ===============================
-    // NOT FOUND
-    // ===============================
+    // =====================================================
+    // TIDAK DITEMUKAN
+    // =====================================================
     if (notFound.length > 0) {
         console.log("");
-        console.log("======= EMPLOYEE TIDAK DITEMUKAN =======");
+        console.log("========================================");
+        console.log("        EMPLOYEE TIDAK DITEMUKAN");
+        console.log("========================================");
 
         for (const item of notFound) {
             console.log(
-                `⚠️ ${item.file} → "${item.name}"`
+                `⚠️ ${item.file}`
             );
+
+            console.log(
+                `   Nama: "${item.name}"`
+            );
+
+            console.log("");
         }
     }
 
-    // ===============================
-    // FAILED
-    // ===============================
+    // =====================================================
+    // GAGAL
+    // =====================================================
     if (failed.length > 0) {
         console.log("");
-        console.log("============= GAGAL =============");
+        console.log("========================================");
+        console.log("                 GAGAL");
+        console.log("========================================");
 
         for (const item of failed) {
             console.log(
-                `❌ ${item.file} → ${item.name}`
+                `❌ ${item.file}`
             );
-            console.log(`   Alasan: ${item.reason}`);
+
+            console.log(
+                `   Nama    : ${item.name || "-"}`
+            );
+
+            console.log(
+                `   NIP     : ${item.nip || "-"}`
+            );
+
+            console.log(
+                `   Alasan  : ${item.reason}`
+            );
+
+            console.log("");
         }
     }
 
+    // =====================================================
+    // SELESAI
+    // =====================================================
     console.log("");
     console.log("========================================");
     console.log("           PROSES SELESAI");
     console.log("========================================");
+    console.log("");
 }
 
+// =====================================================
+// ERROR HANDLER
+// =====================================================
 main().catch((error) => {
     console.error("");
-    console.error("❌ ERROR:");
+    console.error("========================================");
+    console.error("                 ERROR");
+    console.error("========================================");
+    console.error("");
+
     console.error(error);
+
+    console.error("");
     process.exit(1);
 });

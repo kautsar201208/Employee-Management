@@ -132,6 +132,7 @@ export default function UnggahKelolaBerkasPage() {
   // User info state
   const [currentEmployee, setCurrentEmployee] = useState<ApiEmployee | null>(null);
   const [userEmail, setUserEmail] = useState("");
+  const [avatarImageError, setAvatarImageError] = useState(false);
 
   // Upload Form State
   const [formCategory, setFormCategory] = useState<UploadedDocument["category"]>("sk");
@@ -325,7 +326,7 @@ export default function UnggahKelolaBerkasPage() {
       {/* 2. MAIN CONTENT AREA */}
       <div className="flex-1 md:pl-[280px] flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 h-[74px] bg-white border-b border-[#E2E8F0]/80 px-4 sm:px-8 flex items-center justify-between shadow-[0_1px_4px_rgba(0,0,0,0.03)] backdrop-blur-md bg-white/95">
+        <header className="sticky top-0 z-30 h-[82px] bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -356,13 +357,14 @@ export default function UnggahKelolaBerkasPage() {
             {/* Profile Avatar */}
             <div className="flex items-center gap-2.5">
               <div className="relative w-9 h-9 rounded-full ring-2 ring-[#094CB2]/20 overflow-hidden bg-slate-200 flex-shrink-0 flex items-center justify-center font-bold text-xs text-[#094CB2]">
-                {currentEmployee?.profile_image ? (
+                {currentEmployee?.profile_image && !avatarImageError ? (
                   <Image
                     src={currentEmployee.profile_image}
                     alt={userName}
                     fill
                     sizes="36px"
                     className="object-cover"
+                    onError={() => setAvatarImageError(true)}
                   />
                 ) : (
                   userName.slice(0, 2).toUpperCase()
