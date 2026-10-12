@@ -42,10 +42,6 @@ export default function Navbar() {
 
   return (
     <header className="topbar home-topbar">
-      <label className="home-search">
-        <span aria-hidden="true">⌕</span>
-        <input aria-label="Cari sesuatu" placeholder="Cari sesuatu..." type="search" />
-      </label>
       <div className="topbar-right home-topbar-right">
         <span aria-hidden="true" className="home-profile-avatar">{email ? getInitials(email) : "HR"}</span>
         <div className="home-profile-copy"><strong>{email || "Admin HR"}</strong><span>HR Manager</span></div>

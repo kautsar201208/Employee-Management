@@ -2099,8 +2099,8 @@ input {
 /* Side-by-side row for Status + Keterangan */
 .status-keterangan-row {
   display: grid;
-  grid-template-columns: 1fr 1.6fr;
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
   align-items: start;
 }
 

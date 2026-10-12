@@ -18,11 +18,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // ── Jika sudah login & mencoba akses login/register, redirect ke tujuan ──
-  const isAuthPage =
-    pathname.startsWith("/auth/login") || pathname.startsWith("/auth/register");
+  // ── Biarkan halaman login bisa dibuka meskipun cookie sesi masih tersimpan ──
+  const isRegisterPage = pathname.startsWith("/auth/register");
 
-  if (isAuthPage && isLoggedIn) {
+  if (isRegisterPage && isLoggedIn) {
     const dest = role === "admin" ? "/dashboard" : "/Homepage/Profile";
     return NextResponse.redirect(new URL(dest, request.url));
   }
