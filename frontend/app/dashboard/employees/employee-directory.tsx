@@ -34,6 +34,7 @@ type EmployeeFormValues = {
   jenis_jabatan: string;
   tim_kerja: string;
   status: string;
+  keterangan: string;
   pangkat_golongan: string;
   tmt_golongan: string;
   jenjang_pendidikan: string;
@@ -59,6 +60,7 @@ const employeeFormFields: Array<{
   { key: "jenis_jabatan", label: "Jenis jabatan" },
   { key: "tim_kerja", label: "Tim kerja" },
   { key: "status", label: "Status" },
+  { key: "keterangan", label: "Keterangan" },
   { key: "pangkat_golongan", label: "Pangkat / golongan" },
   { key: "tmt_golongan", label: "TMT golongan", type: "date" },
   { key: "jenjang_pendidikan", label: "Jenjang pendidikan" },
@@ -78,6 +80,7 @@ function createEmptyEmployeeForm(): EmployeeFormValues {
     jenis_jabatan: "",
     tim_kerja: "",
     status: "",
+    keterangan: "",
     pangkat_golongan: "",
     tmt_golongan: "",
     jenjang_pendidikan: "",
@@ -108,8 +111,49 @@ function normalizeTimKerjaForm(value?: string | null): string {
   return trimmed;
 }
 
+function formatPhoneNumber(phone?: string | null): string {
+  if (!phone) return "—";
+  const trimmed = phone.trim();
+  if (trimmed.startsWith("8")) {
+    return "0" + trimmed;
+  }
+  return trimmed;
+}
+
+function normalizePhoneNumber(phone?: string | null): string | null {
+  if (!phone) return null;
+  const trimmed = phone.trim();
+  if (!trimmed) return null;
+  // Strip leading 0 so stored value always starts with 8 (matches DB convention)
+  if (trimmed.startsWith("08")) {
+    return trimmed.slice(1);
+  }
+  return trimmed;
+}
+
+function parseStatusAndKeterangan(rawStatus?: string | null, rawKeterangan?: string | null) {
+  if (rawKeterangan && rawKeterangan !== "—") {
+    return { status: rawStatus || "—", keterangan: rawKeterangan };
+  }
+  if (!rawStatus) {
+    return { status: "—", keterangan: "—" };
+  }
+  const match = rawStatus.match(/^(.*?)\s*[\(\-\[]\s*(Tugas Belajar|Cuti di Luar Tanggungan Negara)\s*[\)\]]?$/i);
+  if (match) {
+    return {
+      status: match[1].trim(),
+      keterangan: match[2].trim(),
+    };
+  }
+  return { status: rawStatus, keterangan: rawKeterangan || "—" };
+}
+
 function toEmployeeForm(employee: ApiEmployee): EmployeeFormValues {
   const dateValue = (value?: string | null) => value?.slice(0, 10) || "";
+  const { status, keterangan } = parseStatusAndKeterangan(
+    employee.status,
+    employee.keterangan,
+  );
 
   return {
     nama_lengkap: employee.nama_lengkap || employee.nama || "",
@@ -118,7 +162,8 @@ function toEmployeeForm(employee: ApiEmployee): EmployeeFormValues {
     jabatan: employee.jabatan || "",
     jenis_jabatan: employee.jenis_jabatan || "",
     tim_kerja: normalizeTimKerjaForm(employee.tim_kerja),
-    status: employee.status || "",
+    status: status === "—" ? "" : status,
+    keterangan: keterangan === "—" ? "" : keterangan,
     pangkat_golongan: employee.pangkat_golongan || "",
     tmt_golongan: dateValue(employee.tmt_golongan),
     jenjang_pendidikan: employee.jenjang_pendidikan || "",
@@ -127,7 +172,11 @@ function toEmployeeForm(employee: ApiEmployee): EmployeeFormValues {
     tempat_lahir: employee.tempat_lahir || "",
     tanggal_lahir: dateValue(employee.tanggal_lahir),
     nomor_ktp: employee.nomor_ktp || "",
-    nomor_ponsel: employee.nomor_ponsel || "",
+    nomor_ponsel: employee.nomor_ponsel
+      ? employee.nomor_ponsel.trim().startsWith("8")
+        ? "0" + employee.nomor_ponsel.trim()
+        : employee.nomor_ponsel.trim()
+      : "",
   };
 }
 
@@ -144,6 +193,7 @@ function toEmployeeInput(values: EmployeeFormValues): EmployeeInput {
     jenis_jabatan: optionalValue(values.jenis_jabatan),
     tim_kerja: optionalValue(normalizeTimKerjaForm(values.tim_kerja)),
     status: optionalValue(values.status),
+    keterangan: optionalValue(values.keterangan),
     pangkat_golongan: optionalValue(values.pangkat_golongan),
     tmt_golongan: optionalValue(values.tmt_golongan),
     jenjang_pendidikan: optionalValue(values.jenjang_pendidikan),
@@ -152,7 +202,7 @@ function toEmployeeInput(values: EmployeeFormValues): EmployeeInput {
     tempat_lahir: optionalValue(values.tempat_lahir),
     tanggal_lahir: optionalValue(values.tanggal_lahir),
     nomor_ktp: optionalValue(values.nomor_ktp),
-    nomor_ponsel: optionalValue(values.nomor_ponsel),
+    nomor_ponsel: normalizePhoneNumber(values.nomor_ponsel),
   };
 }
 
@@ -165,6 +215,7 @@ type EmployeeRow = {
   role: string;
   department: string;
   status: string;
+  keterangan: string;
   joined: string;
   initials: string;
 };
@@ -181,6 +232,11 @@ function toEmployeeRow(employee: ApiEmployee, index: number): EmployeeRow {
     .join("")
     .toUpperCase();
 
+  const { status, keterangan } = parseStatusAndKeterangan(
+    employee.status || employee.jenis_jabatan,
+    employee.keterangan,
+  );
+
   return {
     key: String(employee.id ?? employee.nip ?? employee.no ?? index),
     recordId: employee.id == null ? "" : String(employee.id),
@@ -189,7 +245,8 @@ function toEmployeeRow(employee: ApiEmployee, index: number): EmployeeRow {
     email: employee.email || "—",
     role: employee.jabatan || employee.jenis_jabatan || "—",
     department: formatTimKerja(employee.tim_kerja),
-    status: employee.status || employee.jenis_jabatan || "—",
+    status: status || "—",
+    keterangan: keterangan || "—",
     joined: employee.tmt_golongan || "—",
     initials: initials || "?",
   };
@@ -340,7 +397,7 @@ export default function EmployeeDirectory() {
 
   const filteredEmployees = employeeRows.filter((employee) => {
     const searchable =
-      `${employee.name} ${employee.id} ${employee.email} ${employee.role} ${employee.department}`.toLowerCase();
+      `${employee.name} ${employee.id} ${employee.email} ${employee.role} ${employee.department} ${employee.status} ${employee.keterangan}`.toLowerCase();
 
     return (
       searchable.includes(query.trim().toLowerCase()) &&
@@ -904,7 +961,8 @@ export default function EmployeeDirectory() {
                 <th scope="col">NIP</th>
                 <th scope="col">Jabatan</th>
                 <th scope="col">Tim Kerja</th>
-                <th scope="col">Status</th>
+                <th scope="col" style={{ width: "95px", whiteSpace: "nowrap" }}>Status</th>
+                <th scope="col" style={{ minWidth: "150px", whiteSpace: "nowrap" }}>Keterangan</th>
                 <th scope="col">
                   TMT Golongan
                 </th>
@@ -957,6 +1015,22 @@ export default function EmployeeDirectory() {
                       <i aria-hidden="true" />
                       {employee.status}
                     </span>
+                  </td>
+
+                  <td>
+                    {employee.keterangan && employee.keterangan !== "—" ? (
+                      <span
+                        className={`keterangan-badge ${
+                          employee.keterangan.toLowerCase().includes("tugas")
+                            ? "keterangan-tugas"
+                            : "keterangan-cuti"
+                        }`}
+                      >
+                        {employee.keterangan}
+                      </span>
+                    ) : (
+                      <span className="keterangan-empty">—</span>
+                    )}
                   </td>
 
                   <td>{employee.joined}</td>
@@ -1024,7 +1098,7 @@ export default function EmployeeDirectory() {
                   <tr>
                     <td
                       className="employees-empty"
-                      colSpan={7}
+                      colSpan={8}
                     >
                       Karyawan tidak ditemukan.
                       Coba ubah kata kunci atau
@@ -1037,7 +1111,7 @@ export default function EmployeeDirectory() {
                 <tr>
                   <td
                     className="employees-empty"
-                    colSpan={7}
+                    colSpan={8}
                   >
                     Mengambil data karyawan dari
                     backend...
@@ -1049,7 +1123,7 @@ export default function EmployeeDirectory() {
                 <tr>
                   <td
                     className="employees-empty"
-                    colSpan={7}
+                    colSpan={8}
                   >
                     <span role="alert">
                       {error}
@@ -1327,7 +1401,14 @@ export default function EmployeeDirectory() {
                 <div>
                   <dt>Status</dt>
                   <dd>
-                    {selectedProfile.status || "—"}
+                    {parseStatusAndKeterangan(selectedProfile.status, selectedProfile.keterangan).status || "—"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Keterangan</dt>
+                  <dd>
+                    {parseStatusAndKeterangan(selectedProfile.status, selectedProfile.keterangan).keterangan || "—"}
                   </dd>
                 </div>
 
@@ -1408,8 +1489,7 @@ export default function EmployeeDirectory() {
                 <div>
                   <dt>Nomor Ponsel</dt>
                   <dd>
-                    {selectedProfile.nomor_ponsel ||
-                      "—"}
+                    {formatPhoneNumber(selectedProfile.nomor_ponsel)}
                   </dd>
                 </div>
               </dl>
@@ -1483,24 +1563,92 @@ export default function EmployeeDirectory() {
               }
             >
               <div className="employee-form-grid">
-                {employeeFormFields.map(
-                  (field) => (
+                {employeeFormFields.map((field) => {
+                  /* Status & Keterangan: rendered as a grouped div spanning 2 cols */
+                  if (field.key === "status") {
+                    return (
+                      <div
+                        key="status-keterangan-group"
+                        className="employee-form-field employee-form-field--full"
+                      >
+                        <div className="status-keterangan-row">
+                          {/* Status */}
+                          <div className="status-keterangan-col">
+                            <label
+                              htmlFor="employee-status"
+                              className="employee-form-sublabel"
+                            >
+                              Status
+                            </label>
+                            <select
+                              autoComplete="off"
+                              id="employee-status"
+                              className="employee-form-select"
+                              onChange={(event) =>
+                                setEmployeeForm((current) => ({
+                                  ...current,
+                                  status: event.target.value,
+                                }))
+                              }
+                              value={employeeForm.status}
+                            >
+                              <option value="">Pilih Status</option>
+                              <option value="PNS">PNS</option>
+                              <option value="PPPK">PPPK</option>
+                              <option value="PPPK Paruh Waktu">PPPK Paruh Waktu</option>
+                              <option value="ASN">ASN</option>
+                            </select>
+                          </div>
+
+                          {/* Keterangan */}
+                          <div className="status-keterangan-col">
+                            <label
+                              htmlFor="employee-keterangan"
+                              className="employee-form-sublabel"
+                            >
+                              Keterangan
+                            </label>
+                            <select
+                              autoComplete="off"
+                              id="employee-keterangan"
+                              className="employee-form-select"
+                              onChange={(event) =>
+                                setEmployeeForm((current) => ({
+                                  ...current,
+                                  keterangan: event.target.value,
+                                }))
+                              }
+                              value={employeeForm.keterangan}
+                            >
+                              <option value="">— Tidak Ada / Aktif —</option>
+                              <option value="Tugas Belajar">Tugas Belajar</option>
+                              <option value="Cuti di Luar Tanggungan Negara">Cuti di Luar Tanggungan Negara</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  /* Keterangan: already rendered inside status block */
+                  if (field.key === "keterangan") return null;
+
+                  return (
                     <label
-                      className="employee-form-field"
+                      className={`employee-form-field${field.key === "tim_kerja" ? " employee-form-field--full" : ""}`}
                       htmlFor={`employee-${field.key}`}
                       key={field.key}
                     >
                       <span>
                         {field.label}
-                        {field.required
-                          ? " *"
-                          : ""}
+                        {field.required ? " *" : ""}
                       </span>
 
                       {field.key === "tim_kerja" ? (
                         <select
                           autoComplete="off"
                           id={`employee-${field.key}`}
+                          className="employee-form-select"
                           onChange={(event) =>
                             setEmployeeForm((current) => ({
                               ...current,
@@ -1509,14 +1657,6 @@ export default function EmployeeDirectory() {
                           }
                           required={field.required}
                           value={employeeForm[field.key]}
-                          style={{
-                            width: "100%",
-                            padding: "8px 12px",
-                            borderRadius: "6px",
-                            border: "1px solid #d1d5db",
-                            backgroundColor: "#fff",
-                            fontSize: "14px",
-                          }}
                         >
                           <option value="">Pilih Tim Kerja</option>
                           <option value="Tata Usaha">Tata Usaha</option>
@@ -1530,29 +1670,19 @@ export default function EmployeeDirectory() {
                           autoComplete="off"
                           id={`employee-${field.key}`}
                           onChange={(event) =>
-                            setEmployeeForm(
-                              (current) => ({
-                                ...current,
-                                [field.key]:
-                                  event.target
-                                    .value,
-                              }),
-                            )
+                            setEmployeeForm((current) => ({
+                              ...current,
+                              [field.key]: event.target.value,
+                            }))
                           }
                           required={field.required}
-                          type={
-                            field.type || "text"
-                          }
-                          value={
-                            employeeForm[
-                              field.key
-                            ]
-                          }
+                          type={field.type || "text"}
+                          value={employeeForm[field.key]}
                         />
                       )}
                     </label>
-                  ),
-                )}
+                  );
+                })}
               </div>
 
               <div className="employee-form-actions">

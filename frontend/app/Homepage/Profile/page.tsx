@@ -461,7 +461,11 @@ export default function ProfilePage() {
                             <Phone className="w-3 h-3" />
                             Nomor HP / WhatsApp
                           </p>
-                          <p className="font-bold text-slate-800">{employee.nomor_ponsel}</p>
+                          <p className="font-bold text-slate-800">
+                            {employee.nomor_ponsel.trim().startsWith("8")
+                              ? "0" + employee.nomor_ponsel.trim()
+                              : employee.nomor_ponsel}
+                          </p>
                         </div>
                       )}
 

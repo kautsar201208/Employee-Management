@@ -42,7 +42,7 @@ export type ApiEmployee = {
   profile_image?: string | null;
   nomor_ktp?: string | null;
   nomor_ponsel?: string | null;
-  
+  keterangan?: string | null;
 };
 
 export type EmployeeInput = Omit<ApiEmployee, "id" | "no" | "nama_lengkap" | "nip"> & {
@@ -326,5 +326,92 @@ export async function deleteUserDocument(accessToken: string, id: string): Promi
   const json = await res.json().catch(() => null);
   if (!res.ok || !json?.success) {
     throw new Error(json?.message || "Gagal menghapus berkas.");
+  }
+}
+
+// =====================================================
+// OUTSOURCING EMPLOYEES (PEGAWAI ALIH DAYA)
+// =====================================================
+
+export type OutsourcingEmployee = {
+  id: string;
+  no: number;
+  nama_lengkap: string;
+  jabatan: string;
+  satuan_kerja: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type OutsourcingEmployeeInput = {
+  no?: number;
+  nama_lengkap: string;
+  jabatan: string;
+  satuan_kerja?: string;
+};
+
+export async function getOutsourcingEmployees(accessToken: string): Promise<OutsourcingEmployee[]> {
+  const res = await fetch(`${API_BASE_URL}/api/outsourcing-employees`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (res.status === 401) {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    throw new Error("Sesi login tidak valid. Silakan masuk kembali.");
+  }
+  const json = await res.json().catch(() => null);
+  if (!json?.success) {
+    throw new Error(json?.message || "Gagal mengambil data pegawai alih daya.");
+  }
+  return Array.isArray(json.data) ? json.data : [];
+}
+
+export async function createOutsourcingEmployee(
+  accessToken: string,
+  input: OutsourcingEmployeeInput
+): Promise<OutsourcingEmployee> {
+  const res = await fetch(`${API_BASE_URL}/api/outsourcing-employees`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json?.success) {
+    throw new Error(json?.message || "Gagal menambahkan pegawai alih daya.");
+  }
+  return json.data;
+}
+
+export async function updateOutsourcingEmployee(
+  accessToken: string,
+  id: string,
+  input: Partial<OutsourcingEmployeeInput>
+): Promise<OutsourcingEmployee> {
+  const res = await fetch(`${API_BASE_URL}/api/outsourcing-employees/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json?.success) {
+    throw new Error(json?.message || "Gagal memperbarui pegawai alih daya.");
+  }
+  return json.data;
+}
+
+export async function deleteOutsourcingEmployee(accessToken: string, id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/api/outsourcing-employees/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json?.success) {
+    throw new Error(json?.message || "Gagal menghapus pegawai alih daya.");
   }
 }

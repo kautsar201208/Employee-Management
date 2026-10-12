@@ -14,6 +14,42 @@ const getSupabaseClient = (accessToken) => {
     );
 };
 
+const normalizePhoneNumber = (phone) => {
+    if (!phone) return phone;
+    const clean = String(phone).trim();
+    if (clean.startsWith("8")) {
+        return "0" + clean;
+    }
+    return clean;
+};
+
+const parseStatusAndKeterangan = (rawStatus, existingKeterangan) => {
+    if (existingKeterangan) {
+        return { status: rawStatus || "", keterangan: existingKeterangan };
+    }
+    if (!rawStatus) {
+        return { status: "", keterangan: "" };
+    }
+    const match = String(rawStatus).match(/^(.*?)\s*[\(\-\[]\s*(Tugas Belajar|Cuti di Luar Tanggungan Negara)\s*[\)\]]?$/i);
+    if (match) {
+        return {
+            status: match[1].trim(),
+            keterangan: match[2].trim()
+        };
+    }
+    return { status: rawStatus, keterangan: "" };
+};
+
+const formatEmployeeData = (emp) => {
+    if (!emp) return emp;
+    const { status, keterangan } = parseStatusAndKeterangan(emp.status, emp.keterangan);
+    return {
+        ...emp,
+        status,
+        keterangan: keterangan || emp.keterangan || null
+    };
+};
+
 
 // =====================================================
 // GET SEMUA DATA PEGAWAI
@@ -68,7 +104,7 @@ const getEmployees = async (req, res) => {
             success: true,
             message: "Data pegawai berhasil diambil",
             total: data.length,
-            data: data
+            data: data.map(formatEmployeeData)
         });
 
     } catch (error) {
@@ -142,7 +178,7 @@ const getEmployeeById = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Detail pegawai berhasil diambil",
-            data: data
+            data: formatEmployeeData(data)
         });
 
     } catch (error) {
@@ -355,7 +391,8 @@ const createEmployee = async (req, res) => {
             tanggal_lahir,
             nomor_ktp,
             nomor_ponsel,
-            email
+            email,
+            keterangan
         } = req.body;
 
         if (!nama_lengkap) {
@@ -374,32 +411,50 @@ const createEmployee = async (req, res) => {
 
         const supabase = getSupabaseClient(req.accessToken);
 
-        const { data, error } = await supabase
+        const employeeData = {
+            no,
+            nama_lengkap,
+            nama,
+            nip,
+            status,
+            jenis_jabatan,
+            jabatan,
+            pangkat_golongan,
+            tmt_golongan,
+            tim_kerja,
+            jenjang_pendidikan,
+            jurusan_pendidikan,
+            jenis_kelamin,
+            tempat_lahir,
+            tanggal_lahir,
+            nomor_ktp,
+            nomor_ponsel: normalizePhoneNumber(nomor_ponsel),
+            email
+        };
+
+        if (keterangan !== undefined) {
+            employeeData.keterangan = keterangan;
+        }
+
+        let { data, error } = await supabase
             .from("employees")
-            .insert([
-                {
-                    no,
-                    nama_lengkap,
-                    nama,
-                    nip,
-                    status,
-                    jenis_jabatan,
-                    jabatan,
-                    pangkat_golongan,
-                    tmt_golongan,
-                    tim_kerja,
-                    jenjang_pendidikan,
-                    jurusan_pendidikan,
-                    jenis_kelamin,
-                    tempat_lahir,
-                    tanggal_lahir,
-                    nomor_ktp,
-                    nomor_ponsel,
-                    email
-                }
-            ])
+            .insert([employeeData])
             .select()
             .single();
+
+        if (error && error.message && error.message.includes("keterangan")) {
+            delete employeeData.keterangan;
+            if (keterangan) {
+                employeeData.status = `${status || "PNS"} (${keterangan})`;
+            }
+            const retry = await supabase
+                .from("employees")
+                .insert([employeeData])
+                .select()
+                .single();
+            data = retry.data;
+            error = retry.error;
+        }
 
         if (error) {
             console.log("SUPABASE ERROR:", error);
@@ -414,7 +469,7 @@ const createEmployee = async (req, res) => {
         return res.status(201).json({
             success: true,
             message: "Data pegawai berhasil ditambahkan",
-            data: data
+            data: formatEmployeeData(data)
         });
 
     } catch (error) {
@@ -455,7 +510,8 @@ const updateEmployee = async (req, res) => {
             tanggal_lahir,
             nomor_ktp,
             nomor_ponsel,
-            email
+            email,
+            keterangan
         } = req.body;
 
         if (!nama_lengkap) {
@@ -474,32 +530,55 @@ const updateEmployee = async (req, res) => {
 
         const supabase = getSupabaseClient(req.accessToken);
 
-        const { data, error } = await supabase
+        const updateData = {
+            no,
+            nama_lengkap,
+            nama,
+            nip,
+            status,
+            jenis_jabatan,
+            jabatan,
+            pangkat_golongan,
+            tmt_golongan,
+            tim_kerja,
+            jenjang_pendidikan,
+            jurusan_pendidikan,
+            jenis_kelamin,
+            tempat_lahir,
+            tanggal_lahir,
+            nomor_ktp,
+            nomor_ponsel: normalizePhoneNumber(nomor_ponsel),
+            email,
+            updated_at: new Date().toISOString()
+        };
+
+        if (keterangan !== undefined) {
+            updateData.keterangan = keterangan;
+        }
+
+        let { data, error } = await supabase
             .from("employees")
-            .update({
-                no,
-                nama_lengkap,
-                nama,
-                nip,
-                status,
-                jenis_jabatan,
-                jabatan,
-                pangkat_golongan,
-                tmt_golongan,
-                tim_kerja,
-                jenjang_pendidikan,
-                jurusan_pendidikan,
-                jenis_kelamin,
-                tempat_lahir,
-                tanggal_lahir,
-                nomor_ktp,
-                nomor_ponsel,
-                email,
-                updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq("id", id)
             .select()
             .single();
+
+        if (error && error.message && error.message.includes("keterangan")) {
+            delete updateData.keterangan;
+            if (keterangan) {
+                updateData.status = `${status || "PNS"} (${keterangan})`;
+            } else if (status) {
+                updateData.status = status;
+            }
+            const retry = await supabase
+                .from("employees")
+                .update(updateData)
+                .eq("id", id)
+                .select()
+                .single();
+            data = retry.data;
+            error = retry.error;
+        }
 
         if (error) {
             console.log("SUPABASE ERROR:", error);
@@ -514,7 +593,7 @@ const updateEmployee = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Data pegawai berhasil diubah",
-            data: data
+            data: formatEmployeeData(data)
         });
 
     } catch (error) {
