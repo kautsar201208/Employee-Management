@@ -405,7 +405,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="p-5 grid grid-cols-2 gap-4 text-xs">
                       {employee.nomor_ktp && (
-                        <div className="col-span-2">
+                        <div>
                           <p className="text-slate-400 font-medium mb-0.5 flex items-center gap-1">
                             <CreditCard className="w-3 h-3" />
                             Nomor Induk Kependudukan (NIK)
@@ -430,7 +430,7 @@ export default function ProfilePage() {
                         </div>
                       )}
                       {employee.email && (
-                        <div className="col-span-2">
+                        <div>
                           <p className="text-slate-400 font-medium mb-0.5 flex items-center gap-1">
                             <Mail className="w-3 h-3" />
                             Email
@@ -444,7 +444,7 @@ export default function ProfilePage() {
                         </div>
                       )}
                       {employee.nomor_ponsel && (
-                        <div className="col-span-2">
+                        <div>
                           <p className="text-slate-400 font-medium mb-0.5 flex items-center gap-1">
                             <Phone className="w-3 h-3" />
                             Nomor HP / WhatsApp
