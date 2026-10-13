@@ -14,22 +14,17 @@ import {
   ApiEmployee,
 } from "@/lib/api";
 import {
-  User,
-  GraduationCap,
   Briefcase,
-  TrendingUp,
   Menu,
   CalendarDays,
   Bell,
   ChevronRight,
   FileText,
-  BadgeCheck,
   LogOut,
   AlertCircle,
   Mail,
   Phone,
   CreditCard,
-  Hash,
 } from "lucide-react";
 
 // ====== Helper: format tanggal lahir dari "YYYY-MM-DD"
@@ -58,7 +53,7 @@ function hitungMasaKerja(tmtGolongan?: string | null): string {
       years--;
       months += 12;
     }
-    return `${years} Thn ${months} Bln`;
+    return `${years} Tahun ${months} Bulan`;
   } catch {
     return "-";
   }
@@ -406,14 +401,7 @@ export default function ProfilePage() {
                     className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
                   >
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-[#3366CC]" />
-                        <h3 className="text-sm font-bold text-[#0D1B2E]">Informasi Pribadi &amp; Kontak</h3>
-                      </div>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
-                        <BadgeCheck className="w-3 h-3" />
-                        Data Terverifikasi
-                      </span>
+                      <h3 className="text-sm font-bold text-[#0D1B2E]">Informasi Pribadi &amp; Kontak</h3>
                     </div>
                     <div className="p-5 grid grid-cols-2 gap-4 text-xs">
                       {employee.nomor_ktp && (
@@ -491,10 +479,7 @@ export default function ProfilePage() {
                     className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
                   >
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="w-4 h-4 text-[#3366CC]" />
-                        <h3 className="text-sm font-bold text-[#0D1B2E]">Riwayat Pendidikan</h3>
-                      </div>
+                      <h3 className="text-sm font-bold text-[#0D1B2E]">Riwayat Pendidikan</h3>
                     </div>
                     <div className="p-5 flex flex-col gap-3 text-xs">
                       {employee.jenjang_pendidikan ? (
@@ -534,10 +519,7 @@ export default function ProfilePage() {
                     className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
                   >
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-[#3366CC]" />
-                        <h3 className="text-sm font-bold text-[#0D1B2E]">Kepangkatan &amp; Jabatan</h3>
-                      </div>
+                      <h3 className="text-sm font-bold text-[#0D1B2E]">Kepangkatan &amp; Jabatan</h3>
                     </div>
                     <div className="p-5 flex flex-col gap-4 text-xs">
                       <div className="grid grid-cols-2 gap-y-4 gap-x-6">
@@ -558,8 +540,7 @@ export default function ProfilePage() {
                     transition={{ duration: 0.25, delay: 0.12 }}
                     className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
                   >
-                    <div className="flex items-center gap-2 px-5 py-4 border-b border-slate-100">
-                      <Hash className="w-4 h-4 text-[#3366CC]" />
+                    <div className="px-5 py-4 border-b border-slate-100">
                       <h3 className="text-sm font-bold text-[#0D1B2E]">Identitas Kepegawaian</h3>
                     </div>
                     <div className="p-5 flex flex-col gap-4 text-xs">
