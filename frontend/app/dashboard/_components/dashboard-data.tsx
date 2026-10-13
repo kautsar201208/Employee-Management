@@ -13,6 +13,9 @@ import {
   Briefcase,
   Search,
   UserCheck,
+  Calendar,
+  Clock,
+  Landmark,
 } from "lucide-react";
 import {
   ACCESS_TOKEN_KEY,
@@ -84,23 +87,21 @@ const CATEGORIES: CategoryMeta[] = [
 ];
 
 const PALETTE = [
-  "#3366CC", // Brand Blue
-  "#10B981", // Emerald
-  "#F59E0B", // Amber
-  "#8B5CF6", // Purple
-  "#EC4899", // Pink
-  "#06B6D4", // Cyan
-  "#F97316", // Orange
-  "#6366F1", // Indigo
-  "#14B8A6", // Teal
-  "#84CC16", // Lime
-  "#64748B", // Slate
+  "#2563EB", // Primary Royal Blue
+  "#85A8EB", // Soft Light Blue
+  "#38BDF8", // Sky Blue
+  "#818CF8", // Indigo Blue
+  "#A5B4FC", // Soft Indigo
+  "#60A5FA", // Medium Blue
+  "#94A3B8", // Slate
+  "#CBD5E1", // Light Slate
 ];
 
 function getItemColor(key: StatCategoryKey, name: string, index: number): string {
   if (key === "jenis_kelamin") {
-    if (name.toLowerCase().includes("laki")) return "#3366CC";
-    if (name.toLowerCase().includes("perempuan")) return "#EC4899";
+    const lower = name.toLowerCase();
+    if (lower.includes("perempuan") || lower === "p") return "#2563EB";
+    if (lower.includes("laki") || lower === "l") return "#85A8EB";
   }
   return PALETTE[index % PALETTE.length];
 }
@@ -320,8 +321,8 @@ export default function DashboardData() {
           </p>
         </div>
         <div className="home-date" suppressHydrationWarning>
-          <span aria-hidden="true">▦</span>
-          {currentDate}
+          <Calendar size={15} className="text-[#2563eb]" />
+          <span>{currentDate}</span>
         </div>
       </motion.section>
 
@@ -354,26 +355,30 @@ export default function DashboardData() {
               Total Pegawai
             </span>
             <span
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-              style={{ backgroundColor: "#eff6ff", color: "#3366cc" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#eff6ff] text-[#2563eb]"
               aria-hidden="true"
             >
-              <Users size={18} />
+              <Users size={16} />
             </span>
           </div>
 
-          <div className="my-1.5">
+          <div className="my-1">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black text-[#0d1b2e] tracking-tight">
+              <span className="text-3xl font-extrabold text-[#0d1b2e] tracking-tight">
                 {topMetrics.totalEmployees.toLocaleString("id-ID")}
               </span>
               <span className="text-xs font-semibold text-slate-400">orang</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span>Pegawai Aktif Terdata di Sistem</span>
+          <div>
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb]" />
+              <span>Pegawai Aktif Terdata di Sistem</span>
+            </div>
+            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-1/3 h-full bg-[#2563eb] rounded-full" />
+            </div>
           </div>
         </motion.article>
 
@@ -388,43 +393,41 @@ export default function DashboardData() {
               Jenis Kelamin
             </span>
             <span
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-              style={{ backgroundColor: "#faf5ff", color: "#8b5cf6" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#eff6ff] text-[#2563eb]"
               aria-hidden="true"
             >
-              <UserCheck size={18} />
+              <Clock size={16} />
             </span>
           </div>
 
-          <div className="my-1.5 flex items-center gap-3">
+          <div className="my-1 flex items-center gap-6">
             <div>
-              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+              <div className="text-2xl font-extrabold text-[#0d1b2e] leading-tight">
                 {topMetrics.gender.perempuan}
               </div>
-              <div className="text-[11px] font-medium text-[#ec4899] flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ec4899]" />
+              <div className="text-[11px] font-medium text-[#2563eb] flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb]" />
                 Perempuan ({topMetrics.gender.perempuanPercent}%)
               </div>
             </div>
-            <div className="h-7 w-px bg-slate-200" />
             <div>
-              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+              <div className="text-2xl font-extrabold text-[#0d1b2e] leading-tight">
                 {topMetrics.gender.laki}
               </div>
-              <div className="text-[11px] font-medium text-[#3366cc] flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#3366cc]" />
+              <div className="text-[11px] font-medium text-[#85a8eb] flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#85a8eb]" />
                 Laki-laki ({topMetrics.gender.lakiPercent}%)
               </div>
             </div>
           </div>
 
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden flex">
             <div
-              style={{ width: `${topMetrics.gender.perempuanPercent}%`, backgroundColor: "#ec4899" }}
+              style={{ width: `${topMetrics.gender.perempuanPercent}%`, backgroundColor: "#2563eb" }}
               title={`Perempuan: ${topMetrics.gender.perempuan}`}
             />
             <div
-              style={{ width: `${topMetrics.gender.lakiPercent}%`, backgroundColor: "#3366cc" }}
+              style={{ width: `${topMetrics.gender.lakiPercent}%`, backgroundColor: "#85a8eb" }}
               title={`Laki-laki: ${topMetrics.gender.laki}`}
             />
           </div>
@@ -441,68 +444,43 @@ export default function DashboardData() {
               Status Kepegawaian
             </span>
             <span
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-              style={{ backgroundColor: "#ecfdf5", color: "#10b981" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#eff6ff] text-[#2563eb]"
               aria-hidden="true"
             >
-              <BadgeCheck size={18} />
+              <BadgeCheck size={16} />
             </span>
           </div>
 
-          <div className="my-1.5 flex items-center gap-3">
+          <div className="my-1 flex items-center gap-6">
             <div>
-              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+              <div className="text-2xl font-extrabold text-[#0d1b2e] leading-tight">
                 {topMetrics.status.pns}
               </div>
-              <div className="text-[11px] font-medium text-emerald-700 flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <div className="text-[11px] font-medium text-slate-600 flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb]" />
                 PNS ({topMetrics.status.pnsPercent}%)
               </div>
             </div>
-            <div className="h-7 w-px bg-slate-200" />
             <div>
-              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
+              <div className="text-2xl font-extrabold text-[#0d1b2e] leading-tight">
                 {topMetrics.status.pppk}
               </div>
-              <div className="text-[11px] font-medium text-amber-700 flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              <div className="text-[11px] font-medium text-slate-400 flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#cbd5e1]" />
                 PPPK ({topMetrics.status.pppkPercent}%)
               </div>
             </div>
-            {topMetrics.status.other > 0 && (
-              <>
-                <div className="h-7 w-px bg-slate-200" />
-                <div>
-                  <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
-                    {topMetrics.status.other}
-                  </div>
-                  <div className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                    Lainnya
-                  </div>
-                </div>
-              </>
-            )}
           </div>
 
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden flex">
             <div
-              style={{ width: `${topMetrics.status.pnsPercent}%`, backgroundColor: "#10b981" }}
+              style={{ width: `${topMetrics.status.pnsPercent}%`, backgroundColor: "#2563eb" }}
               title={`PNS: ${topMetrics.status.pns}`}
             />
             <div
-              style={{ width: `${topMetrics.status.pppkPercent}%`, backgroundColor: "#f59e0b" }}
+              style={{ width: `${topMetrics.status.pppkPercent}%`, backgroundColor: "#cbd5e1" }}
               title={`PPPK: ${topMetrics.status.pppk}`}
             />
-            {topMetrics.status.other > 0 && (
-              <div
-                style={{
-                  width: `${Math.max(2, 100 - topMetrics.status.pnsPercent - topMetrics.status.pppkPercent)}%`,
-                  backgroundColor: "#94a3b8",
-                }}
-                title={`Lainnya: ${topMetrics.status.other}`}
-              />
-            )}
           </div>
         </motion.article>
 
@@ -517,74 +495,62 @@ export default function DashboardData() {
               Jenis Jabatan
             </span>
             <span
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-              style={{ backgroundColor: "#fffbeb", color: "#d97706" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#eff6ff] text-[#2563eb]"
               aria-hidden="true"
             >
-              <Briefcase size={18} />
+              <Landmark size={16} />
             </span>
           </div>
 
-          <div className="my-1.5 flex items-center gap-2.5">
-            <div>
-              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
-                {topMetrics.jabatan.fungsional}
-              </div>
-              <div className="text-[11px] font-medium text-[#3366cc] flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#3366cc]" />
-                Fungsional
-              </div>
+          <div className="my-1 flex items-center gap-5">
+            <div className="text-2xl font-extrabold text-[#0d1b2e] leading-tight">
+              {topMetrics.jabatan.fungsional}
             </div>
-            <div className="h-7 w-px bg-slate-200" />
-            <div>
-              <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
-                {topMetrics.jabatan.pelaksana}
-              </div>
-              <div className="text-[11px] font-medium text-teal-700 flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
-                Pelaksana
-              </div>
+            <div className="text-2xl font-extrabold text-[#0d1b2e] leading-tight">
+              {topMetrics.jabatan.pelaksana}
             </div>
-            {topMetrics.jabatan.struktural > 0 && (
-              <>
-                <div className="h-7 w-px bg-slate-200" />
-                <div>
-                  <div className="text-xl font-extrabold text-[#0d1b2e] leading-tight">
-                    {topMetrics.jabatan.struktural}
-                  </div>
-                  <div className="text-[11px] font-medium text-purple-700 flex items-center gap-1 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                    Struktural
-                  </div>
-                </div>
-              </>
-            )}
+            <div className="text-2xl font-extrabold text-[#0d1b2e] leading-tight">
+              {topMetrics.jabatan.struktural}
+            </div>
           </div>
 
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+          <div className="flex items-center gap-2 text-[10px] font-medium text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb]" />
+              Fungsional
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#85a8eb]" />
+              Pelaksana
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#cbd5e1]" />
+              Struktural
+            </span>
+          </div>
+
+          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden flex">
             <div
               style={{
                 width: `${topMetrics.jabatan.fungsionalPercent}%`,
-                backgroundColor: "#3366cc",
+                backgroundColor: "#2563eb",
               }}
               title={`Fungsional: ${topMetrics.jabatan.fungsional}`}
             />
             <div
               style={{
                 width: `${topMetrics.jabatan.pelaksanaPercent}%`,
-                backgroundColor: "#14b8a6",
+                backgroundColor: "#85a8eb",
               }}
               title={`Pelaksana: ${topMetrics.jabatan.pelaksana}`}
             />
-            {topMetrics.jabatan.struktural > 0 && (
-              <div
-                style={{
-                  width: `${Math.max(2, 100 - topMetrics.jabatan.fungsionalPercent - topMetrics.jabatan.pelaksanaPercent)}%`,
-                  backgroundColor: "#8b5cf6",
-                }}
-                title={`Struktural: ${topMetrics.jabatan.struktural}`}
-              />
-            )}
+            <div
+              style={{
+                width: `${Math.max(2, 100 - topMetrics.jabatan.fungsionalPercent - topMetrics.jabatan.pelaksanaPercent)}%`,
+                backgroundColor: "#cbd5e1",
+              }}
+              title={`Struktural: ${topMetrics.jabatan.struktural}`}
+            />
           </div>
         </motion.article>
       </motion.section>
@@ -627,7 +593,7 @@ export default function DashboardData() {
                     setSearchQuery("");
                   }}
                 >
-                  <Icon size={13} />
+                  {isActive && <Icon size={13} />}
                   <span>{cat.label}</span>
                 </button>
               );
@@ -714,8 +680,10 @@ export default function DashboardData() {
             <span>
               {categoryBreakdown[0] ? (
                 <>
-                  Terbanyak: <strong>{categoryBreakdown[0].name}</strong> (
-                  {categoryBreakdown[0].count} orang)
+                  Terbanyak:{" "}
+                  <strong className="highlight">
+                    {categoryBreakdown[0].name} ({categoryBreakdown[0].count} orang)
+                  </strong>
                 </>
               ) : (
                 "Data siap dihitung"
@@ -736,11 +704,13 @@ export default function DashboardData() {
             </div>
             <span
               style={{
-                fontSize: "10px",
-                color: "var(--muted)",
-                background: "#f1f5f9",
-                padding: "3px 8px",
-                borderRadius: "12px",
+                fontSize: "11px",
+                color: "#64748b",
+                background: "#f8fafc",
+                padding: "3px 10px",
+                borderRadius: "6px",
+                border: "1px solid #e2e8f0",
+                fontWeight: 500,
               }}
             >
               Diagram Donat
@@ -754,15 +724,15 @@ export default function DashboardData() {
               aria-label={`Komposisi ${currentCategoryMeta.label}`}
               viewBox="0 0 160 160"
             >
-              <circle className="contract-track" cx="80" cy="80" r="60" />
+              <circle className="contract-track" cx="80" cy="80" r="58" />
               {donutItems.map((item, index) => {
                 const fraction = item.count / (totalEmployees || 1);
-                const strokeLength = fraction * 376.99;
+                const strokeLength = fraction * 364.42;
                 const offset = -donutItems
                   .slice(0, index)
                   .reduce(
                     (total, prev) =>
-                      total + (prev.count / (totalEmployees || 1)) * 376.99,
+                      total + (prev.count / (totalEmployees || 1)) * 364.42,
                     0
                   );
 
@@ -772,9 +742,9 @@ export default function DashboardData() {
                     key={item.name}
                     cx="80"
                     cy="80"
-                    r="60"
+                    r="58"
                     stroke={item.color}
-                    strokeDasharray={`${strokeLength} 376.99`}
+                    strokeDasharray={`${strokeLength} 364.42`}
                     strokeDashoffset={offset}
                   />
                 );

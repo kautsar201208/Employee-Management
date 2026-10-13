@@ -17,6 +17,7 @@ import {
   Sparkles,
   Car,
   FileText,
+  User,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
@@ -351,7 +352,7 @@ export default function OutsourcingDirectory() {
           title="Tampilkan semua pegawai"
         >
           <span className="stat-icon">
-            <Users size={18} strokeWidth={2} />
+            <User size={20} strokeWidth={2.2} />
           </span>
           <div>
             <p className="stat-value">{employees.length}</p>
@@ -374,7 +375,7 @@ export default function OutsourcingDirectory() {
               title={`Filter berdasarkan jabatan ${jabatanName}`}
             >
               <span className="stat-icon">
-                <Icon size={18} strokeWidth={2} />
+                <Icon size={20} strokeWidth={2} />
               </span>
               <div>
                 <p className="stat-value">{count}</p>
@@ -385,67 +386,60 @@ export default function OutsourcingDirectory() {
         })}
       </motion.div>
 
-      {/* Filters */}
-      <motion.div
-        className="filters-bar"
-        variants={cardVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <div className="search-input-wrapper">
-          <Search size={16} className="search-icon" aria-hidden="true" />
-          <input
-            id="search-alih-daya"
-            type="search"
-            className="search-input"
-            placeholder="Cari nama, jabatan, satuan kerja…"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-        </div>
-
-        <select
-          id="filter-jabatan-alih-daya"
-          className="filter-select"
-          value={jabatanFilter}
-          onChange={(e) => {
-            setJabatanFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-        >
-          <option value="all">Semua Jabatan</option>
-          {jabatanOptions.map((j) => (
-            <option key={j} value={j}>
-              {j}
-            </option>
-          ))}
-        </select>
-
-        {(query || jabatanFilter !== "all") && (
-          <button
-            className="btn-reset-filters"
-            onClick={() => {
-              setQuery("");
-              setJabatanFilter("all");
-              setCurrentPage(1);
-            }}
-          >
-            <X size={14} />
-            Reset
-          </button>
-        )}
-      </motion.div>
-
-      {/* Table */}
+      {/* Table Card with Integrated Filters */}
       <motion.div
         className="employee-table-card"
         variants={cardVariants}
         initial="hidden"
         animate="visible"
       >
+        <div className="filters-bar">
+          <div className="search-input-wrapper">
+            <Search size={16} className="search-icon" aria-hidden="true" />
+            <input
+              id="search-alih-daya"
+              type="search"
+              className="search-input"
+              placeholder="Cari nama, jabatan, satuan kerja…"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+
+          <select
+            id="filter-jabatan-alih-daya"
+            className="filter-select"
+            value={jabatanFilter}
+            onChange={(e) => {
+              setJabatanFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="all">Semua Jabatan</option>
+            {jabatanOptions.map((j) => (
+              <option key={j} value={j}>
+                {j}
+              </option>
+            ))}
+          </select>
+
+          {(query || jabatanFilter !== "all") && (
+            <button
+              className="btn-reset-filters"
+              onClick={() => {
+                setQuery("");
+                setJabatanFilter("all");
+                setCurrentPage(1);
+              }}
+            >
+              <X size={14} />
+              Reset
+            </button>
+          )}
+        </div>
         {isLoading ? (
           <div className="table-loading">
             <div className="table-loading-spinner" aria-hidden="true" />
