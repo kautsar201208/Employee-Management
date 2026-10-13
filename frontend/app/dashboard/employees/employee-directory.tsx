@@ -271,6 +271,7 @@ export default function EmployeeDirectory() {
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("all");
   const [status, setStatus] = useState("all");
+  const [role, setRole] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -395,6 +396,18 @@ export default function EmployeeDirectory() {
     [employeeRows],
   );
 
+  const roles = useMemo(
+    () =>
+      [
+        ...new Set(
+          employeeRows
+            .map((employee) => employee.role)
+            .filter((value) => value !== "—"),
+        ),
+      ].sort(),
+    [employeeRows],
+  );
+
   const filteredEmployees = employeeRows.filter((employee) => {
     const searchable =
       `${employee.name} ${employee.id} ${employee.email} ${employee.role} ${employee.department} ${employee.status} ${employee.keterangan}`.toLowerCase();
@@ -402,7 +415,8 @@ export default function EmployeeDirectory() {
     return (
       searchable.includes(query.trim().toLowerCase()) &&
       (department === "all" || employee.department === department) &&
-      (status === "all" || employee.status === status)
+      (status === "all" || employee.status === status) &&
+      (role === "all" || employee.role === role)
     );
   });
 
@@ -446,7 +460,8 @@ export default function EmployeeDirectory() {
   const filtersActive =
     query.trim() !== "" ||
     department !== "all" ||
-    status !== "all";
+    status !== "all" ||
+    role !== "all";
 
   const employmentType = (employee: EmployeeRow) =>
     employee.status.toLowerCase();
@@ -505,6 +520,7 @@ export default function EmployeeDirectory() {
     setQuery("");
     setDepartment("all");
     setStatus("all");
+    setRole("all");
     setCurrentPage(1);
   }
 
@@ -911,6 +927,31 @@ export default function EmployeeDirectory() {
               </option>
 
               {statuses.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="employees-select">
+            <span className="visually-hidden">
+              Filter jabatan
+            </span>
+
+            <select
+              aria-label="Filter jabatan"
+              onChange={(event) => {
+                setRole(event.target.value);
+                setCurrentPage(1);
+              }}
+              value={role}
+            >
+              <option value="all">
+                Semua Jabatan
+              </option>
+
+              {roles.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>

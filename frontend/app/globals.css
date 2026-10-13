@@ -1734,10 +1734,10 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 13px;
+  padding: 12px 14px;
   background: #fff;
 }
 
@@ -1745,26 +1745,33 @@ input {
   display: flex;
   min-width: 0;
   flex: 1;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
 }
 
 .employees-search,
 .employees-select {
   display: flex;
-  min-height: 40px;
+  min-height: 38px;
   align-items: center;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: #f8faff;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.employees-search:focus-within,
+.employees-select:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(51, 102, 204, 0.1);
 }
 
 .employees-search {
-  min-width: 240px;
-  flex: 1;
+  min-width: 140px;
+  flex: 1 1 180px;
   gap: 8px;
-  padding: 0 11px;
+  padding: 0 10px;
   color: var(--muted);
 }
 
@@ -1782,35 +1789,41 @@ input {
 }
 
 .employees-select {
-  min-width: 142px;
-  padding: 0 10px;
+  flex: 0 1 140px;
+  min-width: 110px;
+  max-width: 145px;
+  padding: 0 6px 0 8px;
 }
 
 .employees-select select {
   width: 100%;
-  min-height: 38px;
+  min-height: 36px;
   border: 0;
   outline: 0;
   background: transparent;
   color: var(--ink);
   cursor: pointer;
   font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .employees-reset,
 .employees-export {
   display: inline-flex;
-  min-height: 40px;
+  min-height: 38px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
   border: 1px solid transparent;
   border-radius: 6px;
-  padding: 0 13px;
+  padding: 0 11px;
   cursor: pointer;
   font-size: 11px;
   font-weight: 650;
+  white-space: nowrap;
 }
 
 .employees-reset {
@@ -1840,9 +1853,10 @@ input {
 }
 
 .employees-add {
-  min-height: 40px;
+  min-height: 38px;
   gap: 7px;
   font-size: 11px;
+  white-space: nowrap;
 }
 
 .employees-table-panel {
