@@ -79,7 +79,7 @@ export default function LoginPage() {
     <main className="auth-shell">
       <section className="auth-story" aria-label="Pusat Pengembangan dan Pelindungan Bahasa dan Sastra">
         <Link className="brand" href="/auth/login">
-          <Image className="brand-logo" src="/pusbanglin-logo.png" alt="Logo Pusbanglin" width={60} height={60} priority />
+          <Image className="brand-logo" src="/pusbanglin-logo.png" alt="Logo Pusbanglin" width={100} height={100} />
           <span className="brand-name">Pusat Pengembangan dan Pelindungan Bahasa dan Sastra</span>
         </Link>
         <div className="story-copy">
