@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ChevronLeft,
@@ -18,6 +19,7 @@ import {
   Car,
   FileText,
   User,
+  RefreshCw,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
@@ -111,13 +113,16 @@ export default function OutsourcingDirectory() {
   } | null>(null);
 
   // ── Fetch data ──────────────────────────────────────────────
-  useEffect(() => {
+  const loadData = () => {
     const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
     if (!token) {
       setError("Silakan masuk untuk melihat data karyawan alih daya.");
       setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
+    setError("");
 
     getOutsourcingEmployees(token)
       .then(setEmployees)
@@ -127,6 +132,10 @@ export default function OutsourcingDirectory() {
         );
       })
       .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   // ── Keyboard close ──────────────────────────────────────────
@@ -295,24 +304,49 @@ export default function OutsourcingDirectory() {
   // ── Render ──────────────────────────────────────────────────────
   return (
     <div className="employee-directory">
-      {/* Header */}
-      <motion.div
-        className="directory-header"
-        initial={shouldReduceMotion ? false : { opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-      >
+      {/* HEADER SECTION */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
         <div>
-          <h1 className="directory-title">Data Karyawan Alih Daya</h1>
-          <p className="directory-subtitle">
-            Pegawai alih daya (outsourcing) Pusat Pengembangan dan Pelindungan Bahasa dan Sastra
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+            <Link
+              href="/dashboard"
+              className="hover:text-[#2563EB] transition-colors"
+            >
+              Dashboard
+            </Link>
+            <ChevronRight size={13} className="text-slate-400" />
+            <span className="font-semibold text-slate-800">
+              Data Alih Daya
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
+            Kelola Data Alih Daya
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Akses, pantau, dan kelola seluruh tenaga alih daya (outsourcing) Pusat Pengembangan dan Pelindungan Bahasa dan Sastra.
           </p>
         </div>
-        <button id="btn-tambah-alih-daya" className="btn-add-employee" onClick={openCreate}>
-          <Plus size={18} strokeWidth={2} />
-          Tambah Pegawai
-        </button>
-      </motion.div>
+
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            onClick={loadData}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-60"
+            title="Muat ulang data"
+          >
+            <RefreshCw
+              size={14}
+              className={isLoading ? "animate-spin text-[#2563EB]" : "text-slate-600"}
+            />
+            <span>Segarkan</span>
+          </button>
+
+          <button id="btn-tambah-alih-daya" className="btn-add-employee" onClick={openCreate}>
+            <Plus size={18} strokeWidth={2} />
+            Tambah Pegawai
+          </button>
+        </div>
+      </header>
 
       {/* Feedback toast */}
       {feedback && (

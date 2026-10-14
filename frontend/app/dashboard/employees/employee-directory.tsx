@@ -11,6 +11,7 @@ import {
   Plus,
   Trash2,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
@@ -131,6 +132,85 @@ function normalizePhoneNumber(phone?: string | null): string | null {
   return trimmed;
 }
 
+/**
+ * Menentukan jenis jabatan secara otomatis dari nama jabatan.
+ * Mengembalikan "Fungsional", "Struktural", atau "Pelaksana".
+ *
+ * Aturan (prioritas dari atas):
+ * 1. Struktural: Kepala Pusat, Kepala Bidang, Kepala Sub/Subbagian
+ * 2. Fungsional: mengandung kata level (Utama, Madya, Muda, Pertama, Penyelia,
+ *    Mahir, Terampil, Pemula) ATAU nama jabatan fungsional tertentu
+ * 3. Pelaksana: selain kedua di atas
+ */
+function inferJenisJabatan(jabatan: string): string {
+  const j = jabatan.toLowerCase().trim();
+  if (!j) return "";
+
+  // ── 1. Struktural ─────────────────────────────────────────────
+  if (
+    j.includes("kepala pusat") ||
+    j.includes("kepala bidang") ||
+    j.includes("kepala sub") ||
+    j.includes("kasubbag") ||
+    j.includes("subbagian")
+  ) {
+    return "Struktural";
+  }
+
+  // ── 2. Fungsional – level kata (word-boundary sensitive) ───────
+  // Kata-kata ini biasanya muncul di akhir / tengah nama jabatan fungsional ASN
+  const levelWords = [
+    "utama",
+    "madya",
+    "muda",
+    "pertama",
+    "penyelia",
+    "mahir",
+    "terampil",
+    "pemula",
+  ];
+  for (const kw of levelWords) {
+    // Cocokkan sebagai kata utuh (didahului/diikuti spasi, awal/akhir string, atau tanda baca)
+    if (new RegExp(`(^|\\s)${kw}(\\s|$)`, "i").test(j)) return "Fungsional";
+  }
+
+  // ── 3. Fungsional – nama jabatan khas fungsional ────────────────
+  const fungsionalPrefixes = [
+    "widyabasa",
+    "widyaiswara",
+    "arsiparis",
+    "pranata",
+    "analis",
+    "perencana",
+    "peneliti",
+    "pengembang teknologi",
+    "auditor",
+    "dokter",
+    "apoteker",
+    "perawat",
+    "bidan",
+    "sanitarian",
+    "instruktur",
+    "lektor",
+    "pustakawan",
+    "statistisi",
+    "aktuaris",
+    "diplomat",
+    "jaksa",
+    "hakim",
+    "konselor",
+    "penyuluh",
+    "pengawas",
+    "inspektur",
+  ];
+  for (const prefix of fungsionalPrefixes) {
+    if (j.includes(prefix)) return "Fungsional";
+  }
+
+  // ── 4. Default: Pelaksana ───────────────────────────────────────
+  return "Pelaksana";
+}
+
 function parseStatusAndKeterangan(rawStatus?: string | null, rawKeterangan?: string | null) {
   if (rawKeterangan && rawKeterangan !== "—") {
     return { status: rawStatus || "—", keterangan: rawKeterangan };
@@ -155,12 +235,18 @@ function toEmployeeForm(employee: ApiEmployee): EmployeeFormValues {
     employee.keterangan,
   );
 
+  // jenis_jabatan: gunakan yang ada di DB, jika kosong auto-detect dari jabatan
+  const storedJenisJabatan = employee.jenis_jabatan || "";
+  const autoJenisJabatan = !storedJenisJabatan && employee.jabatan
+    ? inferJenisJabatan(employee.jabatan)
+    : storedJenisJabatan;
+
   return {
     nama_lengkap: employee.nama_lengkap || employee.nama || "",
     nip: employee.nip || "",
     email: employee.email || "",
     jabatan: employee.jabatan || "",
-    jenis_jabatan: employee.jenis_jabatan || "",
+    jenis_jabatan: autoJenisJabatan,
     tim_kerja: normalizeTimKerjaForm(employee.tim_kerja),
     status: status === "—" ? "" : status,
     keterangan: keterangan === "—" ? "" : keterangan,
@@ -301,23 +387,20 @@ export default function EmployeeDirectory() {
     message: string;
   } | null>(null);
 
-  useEffect(() => {
+  const fetchEmployees = () => {
     const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
 
     if (!accessToken) {
-      const timeout = window.setTimeout(() => {
-        setError("Silakan masuk untuk melihat data karyawan.");
-        setIsLoading(false);
-      }, 0);
-
-      return () => window.clearTimeout(timeout);
+      setError("Silakan masuk untuk melihat data karyawan.");
+      setIsLoading(false);
+      return;
     }
 
-    const controller = new AbortController();
+    setIsLoading(true);
+    setError("");
 
-    getEmployees(accessToken, controller.signal)
+    getEmployees(accessToken)
       .then((data) => {
-        console.log("DATA EMPLOYEES:", data);
         setEmployees(data);
       })
       .catch((fetchError: unknown) => {
@@ -335,8 +418,10 @@ export default function EmployeeDirectory() {
         );
       })
       .finally(() => setIsLoading(false));
+  };
 
-    return () => controller.abort();
+  useEffect(() => {
+    fetchEmployees();
   }, []);
 
   useEffect(() => {
@@ -817,13 +902,53 @@ export default function EmployeeDirectory() {
   }
 
   return (
-    <motion.section
-      animate="visible"
-      aria-label="Daftar karyawan"
-      className="employee-directory"
-      initial="hidden"
-      variants={cardVariants}
-    >
+    <div className="space-y-5">
+      {/* HEADER SECTION */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
+        <div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+            <Link
+              href="/dashboard"
+              className="hover:text-[#2563EB] transition-colors"
+            >
+              Dashboard
+            </Link>
+            <ChevronRight size={13} className="text-slate-400" />
+            <span className="font-semibold text-slate-800">
+              Data Karyawan
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
+            Kelola Data Karyawan
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Akses, tinjau, dan kelola seluruh direktori data kepegawaian ASN secara terpusat.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            onClick={fetchEmployees}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-60"
+            title="Muat ulang data"
+          >
+            <RefreshCw
+              size={14}
+              className={isLoading ? "animate-spin text-[#2563EB]" : "text-slate-600"}
+            />
+            <span>Segarkan</span>
+          </button>
+        </div>
+      </header>
+
+      <motion.section
+        animate="visible"
+        aria-label="Daftar karyawan"
+        className="employee-directory"
+        initial="hidden"
+        variants={cardVariants}
+      >
       <section
         className="employees-summary-grid"
         aria-label="Ringkasan data karyawan"
@@ -1674,6 +1799,53 @@ export default function EmployeeDirectory() {
                   /* Keterangan: already rendered inside status block */
                   if (field.key === "keterangan") return null;
 
+                  /* jenis_jabatan: rendered as dedicated labeled dropdown */
+                  if (field.key === "jenis_jabatan") {
+                    const autoDetected = employeeForm.jabatan
+                      ? inferJenisJabatan(employeeForm.jabatan)
+                      : "";
+                    const isAutoMatch =
+                      autoDetected !== "" &&
+                      employeeForm.jenis_jabatan === autoDetected;
+
+                    return (
+                      <label
+                        key="jenis_jabatan"
+                        className="employee-form-field"
+                        htmlFor="employee-jenis_jabatan"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          Jenis jabatan
+                          {isAutoMatch && (
+                            <span
+                              title="Terdeteksi otomatis dari nama jabatan"
+                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            >
+                              ✦ otomatis
+                            </span>
+                          )}
+                        </span>
+                        <select
+                          autoComplete="off"
+                          id="employee-jenis_jabatan"
+                          className="employee-form-select"
+                          onChange={(event) =>
+                            setEmployeeForm((current) => ({
+                              ...current,
+                              jenis_jabatan: event.target.value,
+                            }))
+                          }
+                          value={employeeForm.jenis_jabatan}
+                        >
+                          <option value="">— Pilih / Biarkan otomatis —</option>
+                          <option value="Fungsional">Fungsional</option>
+                          <option value="Struktural">Struktural</option>
+                          <option value="Pelaksana">Pelaksana</option>
+                        </select>
+                      </label>
+                    );
+                  }
+
                   return (
                     <label
                       className={`employee-form-field${field.key === "tim_kerja" ? " employee-form-field--full" : ""}`}
@@ -1685,7 +1857,26 @@ export default function EmployeeDirectory() {
                         {field.required ? " *" : ""}
                       </span>
 
-                      {field.key === "tim_kerja" ? (
+                      {field.key === "jabatan" ? (
+                        <input
+                          autoComplete="off"
+                          id="employee-jabatan"
+                          onChange={(event) => {
+                            const newJabatan = event.target.value;
+                            const autoJenis = inferJenisJabatan(newJabatan);
+                            setEmployeeForm((current) => ({
+                              ...current,
+                              jabatan: newJabatan,
+                              // Selalu gunakan hasil auto-detect jika tersedia,
+                              // hanya fallback ke nilai lama jika field jabatan dikosongkan
+                              jenis_jabatan: autoJenis !== "" ? autoJenis : current.jenis_jabatan,
+                            }));
+                          }}
+                          required={field.required}
+                          type="text"
+                          value={employeeForm.jabatan}
+                        />
+                      ) : field.key === "tim_kerja" ? (
                         <select
                           autoComplete="off"
                           id={`employee-${field.key}`}
@@ -1755,5 +1946,6 @@ export default function EmployeeDirectory() {
         </div>
       )}
     </motion.section>
+    </div>
   );
 }

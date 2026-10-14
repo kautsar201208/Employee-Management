@@ -16,6 +16,8 @@ import {
   Calendar,
   Clock,
   Landmark,
+  ChevronRight,
+  RefreshCw,
 } from "lucide-react";
 import {
   ACCESS_TOKEN_KEY,
@@ -117,22 +119,21 @@ export default function DashboardData() {
   const [activeCategory, setActiveCategory] = useState<StatCategoryKey>("jenis_kelamin");
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
+  const loadData = () => {
     const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
 
     if (!accessToken) {
-      const timeout = window.setTimeout(() => {
-        setError("Silakan masuk untuk melihat ringkasan dashboard.");
-        setIsLoading(false);
-      }, 0);
-      return () => window.clearTimeout(timeout);
+      setError("Silakan masuk untuk melihat ringkasan dashboard.");
+      setIsLoading(false);
+      return;
     }
 
-    const controller = new AbortController();
+    setIsLoading(true);
+    setError("");
 
     Promise.all([
-      getDashboardSummary(accessToken, controller.signal),
-      getEmployees(accessToken, controller.signal),
+      getDashboardSummary(accessToken),
+      getEmployees(accessToken),
     ])
       .then(([dashboardData, employeeData]) => {
         setSummary(dashboardData);
@@ -147,8 +148,10 @@ export default function DashboardData() {
         );
       })
       .finally(() => setIsLoading(false));
+  };
 
-    return () => controller.abort();
+  useEffect(() => {
+    loadData();
   }, []);
 
   const currentDate = new Intl.DateTimeFormat("id-ID", {
@@ -311,20 +314,53 @@ export default function DashboardData() {
       animate="visible"
       variants={staggerVariants}
     >
-      {/* 1. GREETING */}
-      <motion.section className="home-greeting" variants={fadeUpVariants}>
+      {/* 1. HEADER SECTION */}
+      <motion.header
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1"
+        variants={fadeUpVariants}
+      >
         <div>
-          <h1>Selamat datang, Admin HR</h1>
-          <p>
-            Ringkasan aktivitas, demografi, dan metrik manajemen sumber daya
-            manusia hari ini.
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+            <Link
+              href="/dashboard"
+              className="hover:text-[#2563EB] transition-colors"
+            >
+              Dashboard
+            </Link>
+            <ChevronRight size={13} className="text-slate-400" />
+            <span className="font-semibold text-slate-800">Beranda</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
+            Selamat Datang, Admin HR
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Ringkasan aktivitas, demografi, dan metrik manajemen sumber daya manusia hari ini.
           </p>
         </div>
-        <div className="home-date" suppressHydrationWarning>
-          <Calendar size={15} className="text-[#2563eb]" />
-          <span>{currentDate}</span>
+
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            onClick={loadData}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-60"
+            title="Muat ulang ringkasan"
+          >
+            <RefreshCw
+              size={14}
+              className={isLoading ? "animate-spin text-[#2563EB]" : "text-slate-600"}
+            />
+            <span>Segarkan</span>
+          </button>
+
+          <div
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl shadow-xs"
+            suppressHydrationWarning
+          >
+            <Calendar size={14} className="text-[#2563EB]" />
+            <span>{currentDate}</span>
+          </div>
         </div>
-      </motion.section>
+      </motion.header>
 
       {error && (
         <div className="dashboard-feedback" role="alert" style={{ margin: "4px 0" }}>

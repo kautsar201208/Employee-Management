@@ -14,7 +14,9 @@ export default function OutsourcingPage() {
 
       <section className="dashboard-main">
         <Navbar />
-        <OutsourcingDirectory />
+        <div className="employees-content space-y-5">
+          <OutsourcingDirectory />
+        </div>
       </section>
     </main>
   );
