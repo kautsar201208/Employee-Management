@@ -304,6 +304,7 @@ type EmployeeRow = {
   keterangan: string;
   joined: string;
   initials: string;
+  profileImage: string | null;
 };
 
 function toEmployeeRow(employee: ApiEmployee, index: number): EmployeeRow {
@@ -335,7 +336,40 @@ function toEmployeeRow(employee: ApiEmployee, index: number): EmployeeRow {
     keterangan: keterangan || "—",
     joined: employee.tmt_golongan || "—",
     initials: initials || "?",
+    profileImage: employee.profile_image || null,
   };
+}
+
+function EmployeeListAvatar({
+  imageUrl,
+  name,
+  initials,
+}: {
+  imageUrl: string | null;
+  name: string;
+  initials: string;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  if (!imageUrl || imageFailed) {
+    return (
+      <span aria-hidden="true" className="employees-initials">
+        {initials}
+      </span>
+    );
+  }
+
+  return (
+    <Image
+      alt={`Foto profil ${name}`}
+      className="employees-initials employees-profile-image"
+      height={36}
+      onError={() => setImageFailed(true)}
+      src={imageUrl}
+      unoptimized
+      width={36}
+    />
+  );
 }
 
 function getProfileInitials(name: string) {
@@ -1146,9 +1180,12 @@ export default function EmployeeDirectory() {
                 <tr key={employee.key}>
                   <td>
                     <div className="employees-person">
-                      <span className="employees-initials">
-                        {employee.initials}
-                      </span>
+                      <EmployeeListAvatar
+                        key={`${employee.key}-${employee.profileImage ?? ""}`}
+                        imageUrl={employee.profileImage}
+                        initials={employee.initials}
+                        name={employee.name}
+                      />
 
                       <span>
                         <strong>

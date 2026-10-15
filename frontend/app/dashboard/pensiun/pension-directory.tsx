@@ -50,6 +50,40 @@ function getInitials(name: string): string {
   );
 }
 
+function PensionEmployeeAvatar({
+  imageUrl,
+  name,
+  className = "w-8 h-8 rounded-full bg-blue-100 text-[#2563EB] font-bold text-xs flex items-center justify-center shrink-0",
+  imageSize = 48,
+}: {
+  imageUrl: string | null | undefined;
+  name: string;
+  className?: string;
+  imageSize?: number;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  if (!imageUrl || imageFailed) {
+    return (
+      <div aria-hidden="true" className={className}>
+        {getInitials(name)}
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      alt={`Foto profil ${name}`}
+      className={`${className} object-cover`}
+      height={imageSize}
+      onError={() => setImageFailed(true)}
+      src={imageUrl}
+      unoptimized
+      width={imageSize}
+    />
+  );
+}
+
 export default function PensionDirectory() {
   const shouldReduceMotion = useReducedMotion();
 
@@ -709,9 +743,11 @@ export default function PensionDirectory() {
                       {/* PEGAWAI */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 text-[#2563EB] font-bold text-xs flex items-center justify-center shrink-0">
-                            {getInitials(emp.nama_lengkap || emp.nama || "")}
-                          </div>
+                          <PensionEmployeeAvatar
+                            key={`${emp.id ?? emp.nip ?? index}-${emp.profile_image ?? ""}`}
+                            imageUrl={emp.profile_image}
+                            name={emp.nama_lengkap || emp.nama || "Tanpa Nama"}
+                          />
                           <div>
                             <div className="font-bold text-slate-800 group-hover:text-[#2563EB] transition-colors">
                               {emp.nama_lengkap || emp.nama || "Tanpa Nama"}
@@ -869,11 +905,15 @@ export default function PensionDirectory() {
                 </button>
 
                 <div className="flex items-center gap-3.5">
-                  <div className="w-13 h-13 rounded-2xl bg-white/10 text-white font-extrabold text-lg flex items-center justify-center border border-white/20 shadow-inner">
-                    {getInitials(selectedRecord.employee.nama_lengkap || selectedRecord.employee.nama || "")}
-                  </div>
+                  <PensionEmployeeAvatar
+                    key={`${selectedRecord.employee.id ?? selectedRecord.employee.nip ?? ""}-${selectedRecord.employee.profile_image ?? ""}`}
+                    className="w-20 h-20 rounded-2xl bg-white/10 text-white font-extrabold text-2xl flex items-center justify-center shrink-0 border border-white/20 shadow-inner"
+                    imageSize={80}
+                    imageUrl={selectedRecord.employee.profile_image}
+                    name={selectedRecord.employee.nama_lengkap || selectedRecord.employee.nama || "Tanpa Nama"}
+                  />
                   <div>
-                    <h3 className="text-base sm:text-lg font-bold leading-snug">
+                    <h3 className="text-lg sm:text-xl font-bold leading-snug">
                       {selectedRecord.employee.nama_lengkap || selectedRecord.employee.nama || "Tanpa Nama"}
                     </h3>
                     <p className="text-xs text-white/80 font-mono mt-0.5">
