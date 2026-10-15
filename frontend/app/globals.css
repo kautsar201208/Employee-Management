@@ -3230,3 +3230,248 @@ input {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }
+
+.admin-theme {
+  min-height: 100vh;
+}
+
+.admin-theme-toggle {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  padding: 0;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.admin-theme-toggle:hover,
+.admin-theme-toggle:focus-visible {
+  border-color: #c5d6fa;
+  background: var(--blue-light);
+}
+
+.admin-theme-toggle:focus-visible {
+  outline: 2px solid var(--blue-dark);
+  outline-offset: 2px;
+}
+
+.admin-theme[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e2e8f0;
+  --muted: #a6b3c5;
+  --line: #34445a;
+  --paper: #111827;
+  --surface: #1c2738;
+  --blue: #7da9ff;
+  --blue-dark: #a9c4ff;
+  --blue-light: #293b59;
+}
+
+.admin-theme[data-theme="dark"] .dashboard-shell {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] .sidebar,
+.admin-theme[data-theme="dark"] .panel,
+.admin-theme[data-theme="dark"] .stat-card,
+.admin-theme[data-theme="dark"] .home-greeting,
+.admin-theme[data-theme="dark"] .home-stat-card,
+.admin-theme[data-theme="dark"] .home-panel,
+.admin-theme[data-theme="dark"] .employees-summary-card,
+.admin-theme[data-theme="dark"] .employee-table-card,
+.admin-theme[data-theme="dark"] .employees-table-panel,
+.admin-theme[data-theme="dark"] .employee-profile-dialog,
+.admin-theme[data-theme="dark"] .modal-card,
+.admin-theme[data-theme="dark"] .directory-panel {
+  border-color: var(--line);
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] .home-topbar {
+  background: var(--paper);
+}
+
+.admin-theme[data-theme="dark"] .nav-caption,
+.admin-theme[data-theme="dark"] .nav-item {
+  color: var(--muted);
+}
+
+.admin-theme[data-theme="dark"] .nav-item:hover,
+.admin-theme[data-theme="dark"] .nav-item:focus-visible,
+.admin-theme[data-theme="dark"] .nav-item.active {
+  background: var(--blue-light);
+  color: var(--blue-dark);
+}
+
+.admin-theme[data-theme="dark"] .sidebar-org-footer strong,
+.admin-theme[data-theme="dark"] .home-profile-copy strong,
+.admin-theme[data-theme="dark"] .home-greeting h1,
+.admin-theme[data-theme="dark"] .home-stat-value,
+.admin-theme[data-theme="dark"] .employee-profile-header h2,
+.admin-theme[data-theme="dark"] .employee-form-field,
+.admin-theme[data-theme="dark"] .employee-form-sublabel {
+  color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] [class*="text-[#0d1b2e]"] {
+  color: var(--ink) !important;
+}
+
+.admin-theme[data-theme="dark"] .home-logout-button,
+.admin-theme[data-theme="dark"] .home-search,
+.admin-theme[data-theme="dark"] .search-field,
+.admin-theme[data-theme="dark"] .select-field,
+.admin-theme[data-theme="dark"] .search-input,
+.admin-theme[data-theme="dark"] .filter-select,
+.admin-theme[data-theme="dark"] .form-input,
+.admin-theme[data-theme="dark"] .modal-close,
+.admin-theme[data-theme="dark"] .employee-profile-dialog input,
+.admin-theme[data-theme="dark"] .employee-form-field input,
+.admin-theme[data-theme="dark"] .employee-form-select {
+  border-color: var(--line);
+  background-color: #172235;
+  color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] .home-logout-button:hover,
+.admin-theme[data-theme="dark"] .modal-close:hover,
+.admin-theme[data-theme="dark"] .btn-reset-filters:hover,
+.admin-theme[data-theme="dark"] .employee-row:hover,
+.admin-theme[data-theme="dark"] .employees-table tbody tr:hover,
+.admin-theme[data-theme="dark"] .home-table tbody tr:hover,
+.admin-theme[data-theme="dark"] .stat-list-item:hover {
+  background-color: #26354a;
+}
+
+.admin-theme[data-theme="dark"] .home-table th,
+.admin-theme[data-theme="dark"] .employees-table th,
+.admin-theme[data-theme="dark"] .employee-table thead th,
+.admin-theme[data-theme="dark"] .filters-bar,
+.admin-theme[data-theme="dark"] .home-table-footer,
+.admin-theme[data-theme="dark"] .employees-table-footer {
+  border-color: var(--line);
+  background: #202e42;
+  color: var(--muted);
+}
+
+.admin-theme[data-theme="dark"] .home-table td,
+.admin-theme[data-theme="dark"] .employees-table td,
+.admin-theme[data-theme="dark"] .employee-table tbody td,
+.admin-theme[data-theme="dark"] .employee-table th {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.admin-theme[data-theme="dark"] .home-employee-cell strong,
+.admin-theme[data-theme="dark"] .employees-person strong,
+.admin-theme[data-theme="dark"] .employee-name,
+.admin-theme[data-theme="dark"] .employee-name-cell .employee-name {
+  color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] .stat-list-item,
+.admin-theme[data-theme="dark"] .stat-tab-pill,
+.admin-theme[data-theme="dark"] .stat-search-box,
+.admin-theme[data-theme="dark"] .contract-legend-row,
+.admin-theme[data-theme="dark"] .department-insight,
+.admin-theme[data-theme="dark"] .home-date,
+.admin-theme[data-theme="dark"] .home-period,
+.admin-theme[data-theme="dark"] .employees-toolbar,
+.admin-theme[data-theme="dark"] .employees-filter-group,
+.admin-theme[data-theme="dark"] .dashboard-feedback {
+  border-color: var(--line);
+  background-color: #202e42;
+  color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] .employees-search,
+.admin-theme[data-theme="dark"] .employees-select {
+  border-color: #34445a;
+  background-color: #172235;
+  color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] .employees-search input,
+.admin-theme[data-theme="dark"] .employees-select select {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-color: var(--line);
+  background-color: #172235;
+  color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] :is(input, textarea)::placeholder {
+  color: var(--muted);
+}
+
+.admin-theme[data-theme="dark"] .chart-grid-line {
+  stroke: #40516a;
+}
+
+.admin-theme[data-theme="dark"] .chart-category-label {
+  fill: #a6b3c5;
+}
+
+.admin-theme[data-theme="dark"] .contract-track {
+  stroke: #34445a;
+}
+
+.admin-theme[data-theme="dark"] [class~="bg-white"],
+.admin-theme[data-theme="dark"] [class*="bg-white/"],
+.admin-theme[data-theme="dark"] [class~="bg-slate-50"],
+.admin-theme[data-theme="dark"] [class*="bg-slate-50/"],
+.admin-theme[data-theme="dark"] [class~="bg-slate-100"],
+.admin-theme[data-theme="dark"] [class~="bg-gray-50"],
+.admin-theme[data-theme="dark"] [class~="bg-gray-100"],
+.admin-theme[data-theme="dark"] [class*="bg-[#F6F9FD]"] {
+  background-color: var(--surface) !important;
+}
+
+.admin-theme[data-theme="dark"] [class*="bg-gradient-to-"] {
+  background-image: none !important;
+  background-color: var(--surface) !important;
+}
+
+.admin-theme[data-theme="dark"] [class~="text-slate-900"],
+.admin-theme[data-theme="dark"] [class~="text-slate-800"],
+.admin-theme[data-theme="dark"] [class~="text-slate-700"],
+.admin-theme[data-theme="dark"] [class~="text-slate-600"],
+.admin-theme[data-theme="dark"] [class~="text-gray-900"],
+.admin-theme[data-theme="dark"] [class~="text-gray-800"],
+.admin-theme[data-theme="dark"] [class~="text-gray-700"],
+.admin-theme[data-theme="dark"] [class*="text-[#0F172A]"],
+.admin-theme[data-theme="dark"] [class*="text-[#1e3a8a]"] {
+  color: var(--ink) !important;
+}
+
+.admin-theme[data-theme="dark"] [class~="text-slate-500"],
+.admin-theme[data-theme="dark"] [class~="text-slate-400"],
+.admin-theme[data-theme="dark"] [class~="text-gray-500"] {
+  color: var(--muted) !important;
+}
+
+.admin-theme[data-theme="dark"] [class*="border-slate-100"],
+.admin-theme[data-theme="dark"] [class*="border-slate-200"],
+.admin-theme[data-theme="dark"] [class*="border-gray-100"],
+.admin-theme[data-theme="dark"] [class*="border-gray-200"] {
+  border-color: var(--line) !important;
+}
+
+@media (max-width: 700px) {
+  .admin-theme-toggle {
+    width: 34px;
+    height: 34px;
+  }
+}
