@@ -1526,6 +1526,37 @@ export default function EmployeeDirectory() {
                       "Profil Karyawan"}
                   </h2>
 
+                  {/* Jabatan di bawah nama */}
+                  {selectedProfile?.jabatan && (
+                    <p
+                      style={{
+                        margin: "4px 0 0",
+                        fontSize: "0.82rem",
+                        fontWeight: 500,
+                        opacity: 0.75,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {selectedProfile.jabatan}
+                      {selectedProfile.jenis_jabatan && (
+                        <span
+                          style={{
+                            marginLeft: "6px",
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            padding: "1px 6px",
+                            borderRadius: "999px",
+                            background: "rgba(99,102,241,0.12)",
+                            color: "#6366f1",
+                            verticalAlign: "middle",
+                          }}
+                        >
+                          {selectedProfile.jenis_jabatan}
+                        </span>
+                      )}
+                    </p>
+                  )}
+
                   {/* Informasi debug sementara */}
                   {selectedProfile &&
                     !selectedProfile.profile_image && (
@@ -1838,30 +1869,13 @@ export default function EmployeeDirectory() {
 
                   /* jenis_jabatan: rendered as dedicated labeled dropdown */
                   if (field.key === "jenis_jabatan") {
-                    const autoDetected = employeeForm.jabatan
-                      ? inferJenisJabatan(employeeForm.jabatan)
-                      : "";
-                    const isAutoMatch =
-                      autoDetected !== "" &&
-                      employeeForm.jenis_jabatan === autoDetected;
-
                     return (
                       <label
                         key="jenis_jabatan"
                         className="employee-form-field"
                         htmlFor="employee-jenis_jabatan"
                       >
-                        <span className="flex items-center gap-1.5">
-                          Jenis jabatan
-                          {isAutoMatch && (
-                            <span
-                              title="Terdeteksi otomatis dari nama jabatan"
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            >
-                              ✦ otomatis
-                            </span>
-                          )}
-                        </span>
+                        <span>Jenis jabatan</span>
                         <select
                           autoComplete="off"
                           id="employee-jenis_jabatan"
