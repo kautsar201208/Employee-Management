@@ -2,8 +2,9 @@
 
 import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Moon, Sun } from "lucide-react";
 import { ACCESS_TOKEN_KEY, USER_EMAIL_KEY, USER_ROLE_KEY } from "@/lib/api";
+import { useDashboardTheme } from "./dashboard-theme";
 
 function getInitials(email: string) {
   const localPart = email.split("@")[0] || "";
@@ -27,6 +28,7 @@ function getServerEmailSnapshot() {
 export default function Navbar() {
   const router = useRouter();
   const email = useSyncExternalStore(subscribeToEmail, getEmailSnapshot, getServerEmailSnapshot);
+  const { theme, toggleTheme } = useDashboardTheme();
 
   function handleLogout() {
     // Hapus sessionStorage
@@ -43,6 +45,16 @@ export default function Navbar() {
   return (
     <header className="topbar home-topbar">
       <div className="topbar-right home-topbar-right">
+        <button
+          aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
+          aria-pressed={theme === "dark"}
+          className="admin-theme-toggle"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
+          type="button"
+        >
+          {theme === "dark" ? <Sun aria-hidden="true" size={16} /> : <Moon aria-hidden="true" size={16} />}
+        </button>
         <span aria-hidden="true" className="home-profile-avatar">{email ? getInitials(email) : "HR"}</span>
         <div className="home-profile-copy"><strong>{email || "Admin HR"}</strong><span>HR Manager</span></div>
         <button aria-label="Keluar dari akun" className="home-logout-button" onClick={handleLogout} title="Keluar dari akun" type="button">
