@@ -738,19 +738,6 @@ export default function DashboardData() {
               <h2>Komposisi {currentCategoryMeta.label}</h2>
               <p>Visualisasi proporsi persentase data</p>
             </div>
-            <span
-              style={{
-                fontSize: "11px",
-                color: "#64748b",
-                background: "#f8fafc",
-                padding: "3px 10px",
-                borderRadius: "6px",
-                border: "1px solid #e2e8f0",
-                fontWeight: 500,
-              }}
-            >
-              Diagram Donat
-            </span>
           </div>
 
           <div className="contract-chart-wrap">

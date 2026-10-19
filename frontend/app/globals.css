@@ -2274,8 +2274,9 @@ input {
 }
 
 .employee-profile-close:hover {
-  background: #f5f8ff;
-  color: var(--blue);
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .employee-profile-message {
@@ -3350,12 +3351,19 @@ input {
 .admin-theme[data-theme="dark"] .filter-select,
 .admin-theme[data-theme="dark"] .form-input,
 .admin-theme[data-theme="dark"] .modal-close,
+.admin-theme[data-theme="dark"] .employee-profile-close,
 .admin-theme[data-theme="dark"] .employee-profile-dialog input,
 .admin-theme[data-theme="dark"] .employee-form-field input,
 .admin-theme[data-theme="dark"] .employee-form-select {
   border-color: var(--line);
   background-color: #172235;
   color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] .employee-profile-close:hover {
+  border-color: #ef4444;
+  background: #3b1f26;
+  color: #f87171;
 }
 
 .admin-theme[data-theme="dark"] .home-logout-button:hover,
