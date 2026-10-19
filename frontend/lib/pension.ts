@@ -222,6 +222,82 @@ export function formatIndonesianDate(
   }).format(date);
 }
 
+export interface MasaKerjaResult {
+  years: number;
+  months: number;
+  startDate: Date | null;
+  startDateFormatted: string;
+  text: string;
+}
+
+/**
+ * Parse TMT Pengangkatan CPNS/PNS dari NIP: digit ke-9 sampai ke-14 (YYYYMM)
+ * Contoh: NIP ********200312**** -> digit 9-14 adalah "200312" (Desember 2003)
+ */
+export function parseTMTKerjaFromNIP(nip?: string | null): Date | null {
+  if (!nip) return null;
+  const cleanNip = nip.replace(/\D/g, "");
+  if (cleanNip.length >= 14) {
+    const year = parseInt(cleanNip.slice(8, 12), 10);
+    const month = parseInt(cleanNip.slice(12, 14), 10) - 1; // 0-indexed month
+    if (year >= 1950 && year <= 2050 && month >= 0 && month <= 11) {
+      const d = new Date(year, month, 1);
+      if (!isNaN(d.getTime())) return d;
+    }
+  }
+  return null;
+}
+
+/**
+ * Menghitung masa kerja dari tanggal awal menjabat (NIP digit 9-14) sampai dengan hari ini (referenceDate)
+ */
+export function calculateMasaKerja(
+  nip?: string | null,
+  fallbackTmt?: string | null,
+  referenceDate: Date = new Date()
+): MasaKerjaResult | null {
+  let startDate = parseTMTKerjaFromNIP(nip);
+
+  // Fallback jika NIP belum 14 digit tapi ada field tmt_golongan
+  if (!startDate && fallbackTmt) {
+    const parsed = new Date(fallbackTmt);
+    if (!isNaN(parsed.getTime())) {
+      startDate = parsed;
+    }
+  }
+
+  if (!startDate || isNaN(startDate.getTime())) {
+    return null;
+  }
+
+  let years = referenceDate.getFullYear() - startDate.getFullYear();
+  let months = referenceDate.getMonth() - startDate.getMonth();
+  if (referenceDate.getDate() < startDate.getDate()) {
+    months -= 1;
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  years = Math.max(0, years);
+  months = Math.max(0, months);
+
+  const monthNames = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+  const startDateFormatted = `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
+
+  return {
+    years,
+    months,
+    startDate,
+    startDateFormatted,
+    text: `${years} thn ${months} bln`,
+  };
+}
+
 export interface PensionRecord {
   employee: ApiEmployee;
   bup: 58 | 60;
@@ -239,6 +315,7 @@ export interface PensionRecord {
     months: number;
     text: string;
   } | null;
+  masaKerja: MasaKerjaResult | null;
   remainingTime: {
     years: number;
     months: number;
@@ -261,6 +338,7 @@ export function processEmployeePension(
 ): PensionRecord {
   const bupResult = determineBUP(employee.jabatan, employee.jenis_jabatan);
   const birthDate = parseBirthDate(employee.tanggal_lahir, employee.nip);
+  const masaKerja = calculateMasaKerja(employee.nip, employee.tmt_golongan, referenceDate);
 
   if (!birthDate) {
     return {
@@ -276,6 +354,7 @@ export function processEmployeePension(
       tahunPensiun: null,
       bulanPensiunStr: "—",
       currentAge: null,
+      masaKerja,
       remainingTime: null,
       status: "tidak_diketahui",
       statusLabel: "Data Lahir Kurang",
@@ -361,13 +440,13 @@ export function processEmployeePension(
     status = "kritis";
     statusLabel = "< 1 Tahun (Segera Pensiun)";
     statusBadgeColor = "red";
-  } else if (totalDays <= 365 * 3) {
+  } else if (totalDays <= 365 * 5) {
     status = "waspada";
-    statusLabel = "1 - 3 Tahun Persiapan";
+    statusLabel = "1 - 5 Tahun Persiapan";
     statusBadgeColor = "orange";
   } else {
     status = "aktif";
-    statusLabel = "> 3 Tahun Aktif";
+    statusLabel = "> 5 Tahun Aktif";
     statusBadgeColor = "emerald";
   }
 
@@ -387,6 +466,7 @@ export function processEmployeePension(
       year: "numeric",
     }).format(tmtPensiun),
     currentAge,
+    masaKerja,
     remainingTime,
     status,
     statusLabel,
