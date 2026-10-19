@@ -329,7 +329,7 @@ export default function PensionDirectory() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 min-w-0 max-w-full w-full">
       {/* HEADER SECTION */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
         <div>
@@ -398,10 +398,10 @@ export default function PensionDirectory() {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border border-blue-200/80 rounded-2xl p-4 sm:p-5 text-slate-800 text-xs sm:text-sm">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 text-slate-800 text-xs sm:text-sm shadow-2xs">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2 font-bold text-[#1e3a8a] text-sm sm:text-base">
-                  <Sparkles size={18} className="text-[#2563EB]" />
+                <div className="flex items-center gap-2 font-bold text-slate-900 text-sm sm:text-base">
+                  <Sparkles size={16} className="text-slate-500" />
                   <span>Ketentuan Batas Usia Pensiun (BUP) Pegawai Pusbanglin</span>
                 </div>
                 <button
@@ -414,9 +414,9 @@ export default function PensionDirectory() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                <div className="bg-white/90 p-3.5 rounded-xl border border-blue-100 shadow-2xs">
-                  <div className="flex items-center gap-2 font-bold text-emerald-800 mb-1.5">
-                    <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-extrabold">
+                <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center gap-2 font-bold text-slate-800 mb-1.5">
+                    <span className="w-6 h-6 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-extrabold">
                       58
                     </span>
                     <span>BUP 58 Tahun (Keahlian Pertama/Muda, Keterampilan, Kasubbag TU, Pelaksana)</span>
@@ -430,9 +430,9 @@ export default function PensionDirectory() {
                   </ul>
                 </div>
 
-                <div className="bg-white/90 p-3.5 rounded-xl border border-blue-100 shadow-2xs">
-                  <div className="flex items-center gap-2 font-bold text-indigo-800 mb-1.5">
-                    <span className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-extrabold">
+                <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center gap-2 font-bold text-slate-800 mb-1.5">
+                    <span className="w-6 h-6 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-extrabold">
                       60
                     </span>
                     <span>BUP 60 Tahun (Keahlian Madya, Utama, &amp; Struktural Pimpinan)</span>
@@ -448,7 +448,7 @@ export default function PensionDirectory() {
               </div>
 
               <div className="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5">
-                <Info size={13} className="text-[#2563EB] shrink-0" />
+                <Info size={13} className="text-slate-400 shrink-0" />
                 <span>
                   Sesuai ketentuan BKN, TMT (Terhitung Mulai Tanggal) pensiun resmi jatuh pada <strong>tanggal 1 di bulan berikutnya</strong> setelah pegawai mencapai usia BUP.
                 </span>
@@ -465,14 +465,14 @@ export default function PensionDirectory() {
       >
         {/* TOTAL PEGAWAI */}
         <motion.article
-          className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col justify-between"
+          className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors"
           variants={cardVariants}
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Total ASN
             </span>
-            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 text-[#2563EB]">
+            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600">
               <Users size={16} />
             </span>
           </div>
@@ -486,14 +486,14 @@ export default function PensionDirectory() {
 
         {/* BUP 58 TAHUN */}
         <motion.article
-          className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col justify-between"
+          className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors"
           variants={cardVariants}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               BUP 58 Thn
             </span>
-            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-600">
+            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600">
               <Award size={16} />
             </span>
           </div>
@@ -507,14 +507,14 @@ export default function PensionDirectory() {
 
         {/* BUP 60 TAHUN */}
         <motion.article
-          className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col justify-between"
+          className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors"
           variants={cardVariants}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               BUP 60 Thn
             </span>
-            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-indigo-50 text-indigo-600">
+            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600">
               <ShieldAlert size={16} />
             </span>
           </div>
@@ -528,43 +528,43 @@ export default function PensionDirectory() {
 
         {/* SEGERA PENSIUN (< 1 TAHUN) */}
         <motion.article
-          className="bg-white rounded-2xl border border-red-200/80 p-4 shadow-2xs flex flex-col justify-between bg-gradient-to-br from-white to-red-50/40"
+          className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors"
           variants={cardVariants}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-red-600 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               &lt; 1 Thn Lagi
             </span>
-            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-red-100 text-red-600">
+            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600">
               <AlertTriangle size={16} />
             </span>
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-extrabold text-red-600 tracking-tight">
+            <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
               {isLoading ? "—" : metrics.kritisCount}
             </div>
-            <p className="text-[11px] text-red-400 mt-0.5">Perlu tindak lanjut HR</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Perlu tindak lanjut HR</p>
           </div>
         </motion.article>
 
         {/* 1-3 TAHUN PERSIAPAN */}
         <motion.article
-          className="bg-white rounded-2xl border border-amber-200/80 p-4 shadow-2xs flex flex-col justify-between bg-gradient-to-br from-white to-amber-50/30 col-span-2 lg:col-span-1"
+          className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors col-span-2 lg:col-span-1"
           variants={cardVariants}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               1 - 3 Thn
             </span>
-            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-100 text-amber-700">
+            <span className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600">
               <Clock size={16} />
             </span>
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-extrabold text-amber-700 tracking-tight">
+            <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
               {isLoading ? "—" : metrics.waspadaCount}
             </div>
-            <p className="text-[11px] text-amber-600/70 mt-0.5">Persiapan purnabakti</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Persiapan purnabakti</p>
           </div>
         </motion.article>
       </section>
@@ -681,19 +681,19 @@ export default function PensionDirectory() {
       )}
 
       {/* MAIN PENSION TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden min-w-0 max-w-full w-full">
+        <div className="overflow-x-auto w-full max-w-full overscroll-x-contain">
+          <table className="w-full min-w-[1120px] text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-200/80 uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4 w-12 text-center">No</th>
-                <th className="py-3.5 px-4">Pegawai ASN</th>
-                <th className="py-3.5 px-4">Jabatan &amp; Kategori BUP</th>
-                <th className="py-3.5 px-4">Tanggal Lahir / Usia</th>
-                <th className="py-3.5 px-4 text-center">Batas Usia (BUP)</th>
-                <th className="py-3.5 px-4">TMT Pensiun</th>
-                <th className="py-3.5 px-4">Sisa Masa Kerja</th>
-                <th className="py-3.5 px-4 text-center">Aksi</th>
+                <th className="py-3.5 px-4 w-12 text-center whitespace-nowrap">No</th>
+                <th className="py-3.5 px-4 min-w-[210px] whitespace-nowrap">Pegawai ASN</th>
+                <th className="py-3.5 px-4 min-w-[220px] whitespace-nowrap">Jabatan &amp; Kategori BUP</th>
+                <th className="py-3.5 px-4 min-w-[160px] whitespace-nowrap">Tanggal Lahir / Usia</th>
+                <th className="py-3.5 px-4 min-w-[120px] text-center whitespace-nowrap">Batas Usia (BUP)</th>
+                <th className="py-3.5 px-4 min-w-[140px] whitespace-nowrap">TMT Pensiun</th>
+                <th className="py-3.5 px-4 min-w-[170px] whitespace-nowrap">Sisa Masa Kerja</th>
+                <th className="py-3.5 px-4 w-20 text-center whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -736,12 +736,12 @@ export default function PensionDirectory() {
                       onClick={() => setSelectedRecord(rec)}
                     >
                       {/* NO */}
-                      <td className="py-3 px-4 text-center text-slate-400 font-medium">
+                      <td className="py-3 px-4 text-center text-slate-400 font-medium whitespace-nowrap">
                         {rowNumber}
                       </td>
 
                       {/* PEGAWAI */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <PensionEmployeeAvatar
                             key={`${emp.id ?? emp.nip ?? index}-${emp.profile_image ?? ""}`}
@@ -749,10 +749,10 @@ export default function PensionDirectory() {
                             name={emp.nama_lengkap || emp.nama || "Tanpa Nama"}
                           />
                           <div>
-                            <div className="font-bold text-slate-800 group-hover:text-[#2563EB] transition-colors">
+                            <div className="font-bold text-slate-800 group-hover:text-[#2563EB] transition-colors whitespace-nowrap">
                               {emp.nama_lengkap || emp.nama || "Tanpa Nama"}
                             </div>
-                            <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                            <div className="text-[11px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
                               NIP: {emp.nip || "—"}
                             </div>
                           </div>
@@ -760,13 +760,13 @@ export default function PensionDirectory() {
                       </td>
 
                       {/* JABATAN & KATEGORI */}
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-slate-700">
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="font-medium text-slate-700 whitespace-nowrap">
                           {emp.jabatan || "Pelaksana"}
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className="flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap ${
                               rec.bup === 60
                                 ? "bg-indigo-50 text-indigo-700 border-indigo-200"
                                 : "bg-blue-50 text-blue-700 border-blue-200"
@@ -775,7 +775,7 @@ export default function PensionDirectory() {
                             {rec.kategori}
                           </span>
                           {emp.tim_kerja && (
-                            <span className="text-[11px] text-slate-400 truncate max-w-[130px]" title={emp.tim_kerja}>
+                            <span className="text-[11px] text-slate-400 whitespace-nowrap" title={emp.tim_kerja}>
                               • {emp.tim_kerja}
                             </span>
                           )}
@@ -783,19 +783,19 @@ export default function PensionDirectory() {
                       </td>
 
                       {/* TANGGAL LAHIR & USIA */}
-                      <td className="py-3 px-4">
-                        <div className="text-slate-800 font-medium">
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="text-slate-800 font-medium whitespace-nowrap">
                           {rec.birthDateFormatted}
                         </div>
-                        <div className="text-[11px] text-slate-400 mt-0.5">
+                        <div className="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">
                           Usia: <span className="font-semibold text-slate-600">{rec.currentAge?.text || "—"}</span>
                         </div>
                       </td>
 
                       {/* BUP BADGE */}
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center justify-center min-w-[58px] px-2.5 py-1 rounded-full text-xs font-extrabold border shadow-2xs ${
+                          className={`inline-flex items-center justify-center min-w-[58px] px-2.5 py-1 rounded-full text-xs font-extrabold border shadow-2xs whitespace-nowrap ${
                             rec.bup === 60
                               ? "bg-indigo-50 text-indigo-700 border-indigo-200"
                               : "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -806,35 +806,35 @@ export default function PensionDirectory() {
                       </td>
 
                       {/* TMT PENSIUN */}
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-[#0F172A]">
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="font-bold text-[#0F172A] whitespace-nowrap">
                           {rec.tmtPensiunFormatted}
                         </div>
-                        <div className="text-[11px] text-slate-400 mt-0.5">
+                        <div className="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">
                           Tahun {rec.tahunPensiun || "—"}
                         </div>
                       </td>
 
                       {/* SISA MASA KERJA */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5">
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${statusBadgeClass}`}
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold border whitespace-nowrap ${statusBadgeClass}`}
                           >
-                            {rec.status === "kritis" && <AlertTriangle size={11} />}
-                            {rec.remainingTime?.text || "—"}
+                            {rec.status === "kritis" && <AlertTriangle size={11} className="shrink-0" />}
+                            <span>{rec.remainingTime?.text || "—"}</span>
                           </span>
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-1">
+                        <div className="text-[11px] text-slate-400 mt-1 whitespace-nowrap">
                           {rec.statusLabel}
                         </div>
                       </td>
 
                       {/* AKSI */}
-                      <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-3 px-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => setSelectedRecord(rec)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#2563EB] bg-blue-50/70 hover:bg-blue-100/80 rounded-lg transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#2563EB] bg-blue-50/70 hover:bg-blue-100/80 rounded-lg transition-colors whitespace-nowrap"
                           title="Lihat detail lengkap pensiun"
                           type="button"
                         >
@@ -930,31 +930,17 @@ export default function PensionDirectory() {
               {/* MODAL BODY */}
               <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs sm:text-sm">
                 {/* STATUS HIGHLIGHT BANNER */}
-                <div
-                  className={`p-3.5 rounded-2xl border flex items-center justify-between ${
-                    selectedRecord.status === "kritis"
-                      ? "bg-red-50 text-red-800 border-red-200"
-                      : selectedRecord.status === "waspada"
-                      ? "bg-amber-50 text-amber-800 border-amber-200"
-                      : selectedRecord.status === "sudah_pensiun"
-                      ? "bg-slate-100 text-slate-800 border-slate-200"
-                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
-                  }`}
-                >
+                <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/80 text-slate-800 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    {selectedRecord.status === "kritis" ? (
-                      <AlertTriangle size={18} className="text-red-600 shrink-0" />
-                    ) : (
-                      <Clock size={18} className="text-emerald-600 shrink-0" />
-                    )}
+                    <Clock size={18} className="text-slate-500 shrink-0" />
                     <div>
-                      <div className="font-bold">{selectedRecord.statusLabel}</div>
-                      <div className="text-[11px] opacity-80 mt-0.5">
-                        Sisa masa pengabdian: <strong>{selectedRecord.remainingTime?.text || "—"}</strong>
+                      <div className="font-bold text-slate-800">{selectedRecord.statusLabel}</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        Sisa masa pengabdian: <strong className="text-slate-700">{selectedRecord.remainingTime?.text || "—"}</strong>
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs font-extrabold px-2 py-1 rounded-lg bg-white/70">
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs">
                     BUP {selectedRecord.bup} Thn
                   </span>
                 </div>
@@ -997,8 +983,8 @@ export default function PensionDirectory() {
                     </strong>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 col-span-2">
-                    <span className="text-[11px] text-[#2563EB] font-bold block">
+                  <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200 col-span-2">
+                    <span className="text-[11px] text-slate-500 font-bold block">
                       Terhitung Mulai Tanggal (TMT) Pensiun
                     </span>
                     <strong className="text-[#0F172A] font-extrabold block mt-0.5 text-sm">
@@ -1013,15 +999,15 @@ export default function PensionDirectory() {
                 {/* HR RECOMMENDATION */}
                 <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 text-xs text-slate-600 space-y-1.5">
                   <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <Info size={14} className="text-[#2563EB]" />
+                    <Info size={14} className="text-slate-500" />
                     <span>Catatan Administrasi Kepegawaian</span>
                   </div>
                   {selectedRecord.status === "kritis" ? (
-                    <p className="text-red-600 leading-relaxed font-medium">
+                    <p className="text-slate-700 leading-relaxed font-medium">
                       Pegawai akan memasuki purnatugas dalam waktu kurang dari 1 tahun. Segera koordinasikan pemberkasan usulan pensiun ke BKN dan siapkan administrasi SK Pensiun serta hak Taspen pegawai.
                     </p>
                   ) : selectedRecord.status === "waspada" ? (
-                    <p className="text-amber-700 leading-relaxed">
+                    <p className="text-slate-600 leading-relaxed">
                       Pegawai memasuki masa persiapan pensiun (1-3 tahun). Disarankan memasukkan pegawai ke dalam program pembekalan purnabakti / kewirausahaan.
                     </p>
                   ) : selectedRecord.status === "sudah_pensiun" ? (
