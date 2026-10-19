@@ -208,7 +208,7 @@ export default function PensionDirectory() {
     let bup58Count = 0;
     let bup60Count = 0;
     let kritisCount = 0; // < 1 tahun
-    let waspadaCount = 0; // 1 - 3 tahun
+    let waspadaCount = 0; // 1 - 5 tahun
     let sudahPensiunCount = 0;
 
     const currentYear = new Date().getFullYear();
@@ -271,9 +271,11 @@ export default function PensionDirectory() {
       "Batas Usia Pensiun (Tahun)",
       "Tanggal Lahir",
       "Usia Saat Ini",
+      "Masa Kerja",
+      "TMT Pengangkatan",
       "TMT Pensiun",
       "Tahun Pensiun",
-      "Sisa Masa Kerja",
+      "Sisa Menuju Pensiun",
       "Status Pensiun",
       "Dasar Aturan",
     ];
@@ -291,6 +293,8 @@ export default function PensionDirectory() {
         rec.bup,
         rec.birthDateFormatted,
         rec.currentAge?.text || "—",
+        rec.masaKerja?.text || "—",
+        rec.masaKerja?.startDateFormatted || "—",
         rec.tmtPensiunFormatted,
         rec.tahunPensiun || "—",
         rec.remainingTime?.text || "—",
@@ -547,14 +551,14 @@ export default function PensionDirectory() {
           </div>
         </motion.article>
 
-        {/* 1-3 TAHUN PERSIAPAN */}
+        {/* 1-5 TAHUN PERSIAPAN */}
         <motion.article
           className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors col-span-2 lg:col-span-1"
           variants={cardVariants}
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              1 - 3 Thn
+              1 - 5 Thn
             </span>
             <span className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600">
               <Clock size={16} />
@@ -618,8 +622,8 @@ export default function PensionDirectory() {
             >
               <option value="all">Semua Status Sisa Waktu</option>
               <option value="kritis">&lt; 1 Tahun (Segera Pensiun)</option>
-              <option value="waspada">1 - 3 Tahun Persiapan</option>
-              <option value="aktif">&gt; 3 Tahun Aktif</option>
+              <option value="waspada">1 - 5 Tahun Persiapan</option>
+              <option value="aktif">&gt; 5 Tahun Aktif</option>
               <option value="sudah_pensiun">Purna Tugas (Sudah Lewat BUP)</option>
             </select>
           </div>
@@ -690,23 +694,24 @@ export default function PensionDirectory() {
                 <th className="py-3.5 px-4 min-w-[210px] whitespace-nowrap">Pegawai ASN</th>
                 <th className="py-3.5 px-4 min-w-[220px] whitespace-nowrap">Jabatan &amp; Kategori BUP</th>
                 <th className="py-3.5 px-4 min-w-[160px] whitespace-nowrap">Tanggal Lahir / Usia</th>
+                <th className="py-3.5 px-4 min-w-[150px] whitespace-nowrap">Masa Kerja</th>
                 <th className="py-3.5 px-4 min-w-[120px] text-center whitespace-nowrap">Batas Usia (BUP)</th>
                 <th className="py-3.5 px-4 min-w-[140px] whitespace-nowrap">TMT Pensiun</th>
-                <th className="py-3.5 px-4 min-w-[170px] whitespace-nowrap">Sisa Masa Kerja</th>
+                <th className="py-3.5 px-4 min-w-[170px] whitespace-nowrap">Sisa Menuju Pensiun</th>
                 <th className="py-3.5 px-4 w-20 text-center whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     <RefreshCw size={22} className="animate-spin mx-auto text-[#2563EB] mb-2" />
                     <p className="font-medium">Memuat dan menghitung data pensiun pegawai...</p>
                   </td>
                 </tr>
               ) : visibleRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     <CalendarClock size={28} className="mx-auto text-slate-300 mb-2" />
                     <p className="font-semibold text-slate-600">Tidak ada data pegawai yang cocok</p>
                     <p className="text-xs text-slate-400 mt-1">
@@ -792,6 +797,16 @@ export default function PensionDirectory() {
                         </div>
                       </td>
 
+                      {/* MASA KERJA (PENGABDIAN DARI NIP) */}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="font-bold text-slate-800 whitespace-nowrap">
+                          {rec.masaKerja ? rec.masaKerja.text : "—"}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">
+                          {rec.masaKerja ? `TMT: ${rec.masaKerja.startDateFormatted}` : "NIP belum lengkap"}
+                        </div>
+                      </td>
+
                       {/* BUP BADGE */}
                       <td className="py-3 px-4 text-center whitespace-nowrap">
                         <span
@@ -815,7 +830,7 @@ export default function PensionDirectory() {
                         </div>
                       </td>
 
-                      {/* SISA MASA KERJA */}
+                      {/* SISA MENUJU PENSIUN */}
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 whitespace-nowrap">
                           <span
@@ -983,6 +998,18 @@ export default function PensionDirectory() {
                     </strong>
                   </div>
 
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
+                    <span className="text-[11px] text-slate-400 font-semibold block">
+                      Masa Kerja (Pengabdian)
+                    </span>
+                    <strong className="text-slate-800 font-bold block mt-0.5 text-xs">
+                      {selectedRecord.masaKerja?.text || "—"}
+                    </strong>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                      TMT: {selectedRecord.masaKerja?.startDateFormatted || "—"}
+                    </span>
+                  </div>
+
                   <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200 col-span-2">
                     <span className="text-[11px] text-slate-500 font-bold block">
                       Terhitung Mulai Tanggal (TMT) Pensiun
@@ -1008,7 +1035,7 @@ export default function PensionDirectory() {
                     </p>
                   ) : selectedRecord.status === "waspada" ? (
                     <p className="text-slate-600 leading-relaxed">
-                      Pegawai memasuki masa persiapan pensiun (1-3 tahun). Disarankan memasukkan pegawai ke dalam program pembekalan purnabakti / kewirausahaan.
+                      Pegawai memasuki masa persiapan pensiun (1-5 tahun). Disarankan memasukkan pegawai ke dalam program pembekalan purnabakti / kewirausahaan.
                     </p>
                   ) : selectedRecord.status === "sudah_pensiun" ? (
                     <p className="text-slate-500 leading-relaxed">
