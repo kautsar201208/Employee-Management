@@ -81,7 +81,7 @@ function createEmptyEmployeeForm(): EmployeeFormValues {
     jenis_jabatan: "",
     tim_kerja: "",
     status: "",
-    keterangan: "",
+    keterangan: "Aktif",
     pangkat_golongan: "",
     tmt_golongan: "",
     jenjang_pendidikan: "",
@@ -212,20 +212,42 @@ function inferJenisJabatan(jabatan: string): string {
 }
 
 function parseStatusAndKeterangan(rawStatus?: string | null, rawKeterangan?: string | null) {
-  if (rawKeterangan && rawKeterangan !== "—") {
-    return { status: rawStatus || "—", keterangan: rawKeterangan };
+  let status = rawStatus ? rawStatus.trim() : "";
+  let keterangan = rawKeterangan ? rawKeterangan.trim() : "";
+
+  // Normalisasi jika keterangan berisi "Cuti di Luar Tanggungan Negara"
+  if (keterangan && /cuti di luar tanggungan negara/i.test(keterangan)) {
+    keterangan = "CLTN";
   }
-  if (!rawStatus) {
-    return { status: "—", keterangan: "—" };
+
+  // Jika keterangan kosong / strip, periksa apakah rawStatus memuat status keterangan dalam tanda kurung
+  if (!keterangan || keterangan === "—") {
+    if (rawStatus) {
+      const match = rawStatus.match(
+        /^(.*?)\s*[\(\-\[]\s*(Tugas Belajar|Cuti di Luar Tanggungan Negara|CLTN|Pensiun)\s*[\)\]]?$/i,
+      );
+      if (match) {
+        status = match[1].trim();
+        const matchedKet = match[2].trim();
+        keterangan = /cuti di luar tanggungan negara/i.test(matchedKet) ? "CLTN" : matchedKet;
+      }
+    }
   }
-  const match = rawStatus.match(/^(.*?)\s*[\(\-\[]\s*(Tugas Belajar|Cuti di Luar Tanggungan Negara)\s*[\)\]]?$/i);
-  if (match) {
-    return {
-      status: match[1].trim(),
-      keterangan: match[2].trim(),
-    };
+
+  // Jika tidak ada keterangan, jadikan statusnya / keterangannya "Aktif"
+  if (!keterangan || keterangan === "—" || keterangan.trim() === "") {
+    keterangan = "Aktif";
   }
-  return { status: rawStatus, keterangan: rawKeterangan || "—" };
+
+  return { status: status || "—", keterangan };
+}
+
+function getKeteranganBadgeClass(keterangan?: string | null): string {
+  const lower = (keterangan || "").toLowerCase();
+  if (lower.includes("tugas")) return "keterangan-tugas";
+  if (lower.includes("cltn") || lower.includes("cuti")) return "keterangan-cuti";
+  if (lower.includes("pensiun")) return "keterangan-pensiun";
+  return "keterangan-aktif";
 }
 
 function toEmployeeForm(employee: ApiEmployee): EmployeeFormValues {
@@ -249,7 +271,7 @@ function toEmployeeForm(employee: ApiEmployee): EmployeeFormValues {
     jenis_jabatan: autoJenisJabatan,
     tim_kerja: normalizeTimKerjaForm(employee.tim_kerja),
     status: status === "—" ? "" : status,
-    keterangan: keterangan === "—" ? "" : keterangan,
+    keterangan: keterangan === "—" ? "Aktif" : (keterangan || "Aktif"),
     pangkat_golongan: employee.pangkat_golongan || "",
     tmt_golongan: dateValue(employee.tmt_golongan),
     jenjang_pendidikan: employee.jenjang_pendidikan || "",
@@ -279,7 +301,7 @@ function toEmployeeInput(values: EmployeeFormValues): EmployeeInput {
     jenis_jabatan: optionalValue(values.jenis_jabatan),
     tim_kerja: optionalValue(normalizeTimKerjaForm(values.tim_kerja)),
     status: optionalValue(values.status),
-    keterangan: optionalValue(values.keterangan),
+    keterangan: values.keterangan?.trim() || "Aktif",
     pangkat_golongan: optionalValue(values.pangkat_golongan),
     tmt_golongan: optionalValue(values.tmt_golongan),
     jenjang_pendidikan: optionalValue(values.jenjang_pendidikan),
@@ -333,7 +355,7 @@ function toEmployeeRow(employee: ApiEmployee, index: number): EmployeeRow {
     role: employee.jabatan || employee.jenis_jabatan || "—",
     department: formatTimKerja(employee.tim_kerja),
     status: status || "—",
-    keterangan: keterangan || "—",
+    keterangan: keterangan || "Aktif",
     joined: employee.tmt_golongan || "—",
     initials: initials || "?",
     profileImage: employee.profile_image || null,
@@ -391,6 +413,7 @@ export default function EmployeeDirectory() {
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("all");
   const [status, setStatus] = useState("all");
+  const [keteranganFilter, setKeteranganFilter] = useState("all");
   const [role, setRole] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -515,6 +538,18 @@ export default function EmployeeDirectory() {
     [employeeRows],
   );
 
+  const keteranganOptions = useMemo(
+    () =>
+      [
+        ...new Set(
+          employeeRows
+            .map((employee) => employee.keterangan)
+            .filter((value) => value && value !== "—"),
+        ),
+      ].sort(),
+    [employeeRows],
+  );
+
   const roles = useMemo(
     () =>
       [
@@ -535,6 +570,7 @@ export default function EmployeeDirectory() {
       searchable.includes(query.trim().toLowerCase()) &&
       (department === "all" || employee.department === department) &&
       (status === "all" || employee.status === status) &&
+      (keteranganFilter === "all" || employee.keterangan === keteranganFilter) &&
       (role === "all" || employee.role === role)
     );
   });
@@ -580,6 +616,7 @@ export default function EmployeeDirectory() {
     query.trim() !== "" ||
     department !== "all" ||
     status !== "all" ||
+    keteranganFilter !== "all" ||
     role !== "all";
 
   const employmentType = (employee: EmployeeRow) =>
@@ -639,6 +676,7 @@ export default function EmployeeDirectory() {
     setQuery("");
     setDepartment("all");
     setStatus("all");
+    setKeteranganFilter("all");
     setRole("all");
     setCurrentPage(1);
   }
@@ -730,6 +768,7 @@ export default function EmployeeDirectory() {
         setQuery("");
         setDepartment("all");
         setStatus("all");
+        setKeteranganFilter("all");
 
         setMutationFeedback({
           type: "success",
@@ -894,6 +933,7 @@ export default function EmployeeDirectory() {
       "Jabatan",
       "Departemen",
       "Status",
+      "Keterangan",
       "Tanggal Bergabung",
     ];
 
@@ -904,6 +944,7 @@ export default function EmployeeDirectory() {
       employee.role,
       employee.department,
       employee.status,
+      employee.keterangan || "Aktif",
       employee.joined,
     ]);
 
@@ -1095,6 +1136,31 @@ export default function EmployeeDirectory() {
 
           <label className="employees-select">
             <span className="visually-hidden">
+              Filter keterangan
+            </span>
+
+            <select
+              aria-label="Filter keterangan"
+              onChange={(event) => {
+                setKeteranganFilter(event.target.value);
+                setCurrentPage(1);
+              }}
+              value={keteranganFilter}
+            >
+              <option value="all">
+                Semua Keterangan
+              </option>
+
+              {keteranganOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="employees-select">
+            <span className="visually-hidden">
               Filter jabatan
             </span>
 
@@ -1221,19 +1287,13 @@ export default function EmployeeDirectory() {
                   </td>
 
                   <td>
-                    {employee.keterangan && employee.keterangan !== "—" ? (
-                      <span
-                        className={`keterangan-badge ${
-                          employee.keterangan.toLowerCase().includes("tugas")
-                            ? "keterangan-tugas"
-                            : "keterangan-cuti"
-                        }`}
-                      >
-                        {employee.keterangan}
-                      </span>
-                    ) : (
-                      <span className="keterangan-empty">—</span>
-                    )}
+                    <span
+                      className={`keterangan-badge ${getKeteranganBadgeClass(
+                        employee.keterangan,
+                      )}`}
+                    >
+                      {employee.keterangan || "Aktif"}
+                    </span>
                   </td>
 
                   <td>{employee.joined}</td>
@@ -1526,6 +1586,37 @@ export default function EmployeeDirectory() {
                       "Profil Karyawan"}
                   </h2>
 
+                  {/* Jabatan di bawah nama */}
+                  {selectedProfile?.jabatan && (
+                    <p
+                      style={{
+                        margin: "4px 0 0",
+                        fontSize: "0.82rem",
+                        fontWeight: 500,
+                        opacity: 0.75,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {selectedProfile.jabatan}
+                      {selectedProfile.jenis_jabatan && (
+                        <span
+                          style={{
+                            marginLeft: "6px",
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            padding: "1px 6px",
+                            borderRadius: "999px",
+                            background: "rgba(99,102,241,0.12)",
+                            color: "#6366f1",
+                            verticalAlign: "middle",
+                          }}
+                        >
+                          {selectedProfile.jenis_jabatan}
+                        </span>
+                      )}
+                    </p>
+                  )}
+
                   {/* Informasi debug sementara */}
                   {selectedProfile &&
                     !selectedProfile.profile_image && (
@@ -1611,7 +1702,19 @@ export default function EmployeeDirectory() {
                 <div>
                   <dt>Keterangan</dt>
                   <dd>
-                    {parseStatusAndKeterangan(selectedProfile.status, selectedProfile.keterangan).keterangan || "—"}
+                    <span
+                      className={`keterangan-badge ${getKeteranganBadgeClass(
+                        parseStatusAndKeterangan(
+                          selectedProfile.status,
+                          selectedProfile.keterangan,
+                        ).keterangan,
+                      )}`}
+                    >
+                      {parseStatusAndKeterangan(
+                        selectedProfile.status,
+                        selectedProfile.keterangan,
+                      ).keterangan || "Aktif"}
+                    </span>
                   </dd>
                 </div>
 
@@ -1821,11 +1924,16 @@ export default function EmployeeDirectory() {
                                   keterangan: event.target.value,
                                 }))
                               }
-                              value={employeeForm.keterangan}
+                              value={
+                                employeeForm.keterangan === "Cuti di Luar Tanggungan Negara"
+                                  ? "CLTN"
+                                  : employeeForm.keterangan || "Aktif"
+                              }
                             >
-                              <option value="">— Tidak Ada / Aktif —</option>
+                              <option value="Aktif">Aktif</option>
                               <option value="Tugas Belajar">Tugas Belajar</option>
-                              <option value="Cuti di Luar Tanggungan Negara">Cuti di Luar Tanggungan Negara</option>
+                              <option value="CLTN">CLTN</option>
+                              <option value="Pensiun">Pensiun</option>
                             </select>
                           </div>
                         </div>
@@ -1838,30 +1946,13 @@ export default function EmployeeDirectory() {
 
                   /* jenis_jabatan: rendered as dedicated labeled dropdown */
                   if (field.key === "jenis_jabatan") {
-                    const autoDetected = employeeForm.jabatan
-                      ? inferJenisJabatan(employeeForm.jabatan)
-                      : "";
-                    const isAutoMatch =
-                      autoDetected !== "" &&
-                      employeeForm.jenis_jabatan === autoDetected;
-
                     return (
                       <label
                         key="jenis_jabatan"
                         className="employee-form-field"
                         htmlFor="employee-jenis_jabatan"
                       >
-                        <span className="flex items-center gap-1.5">
-                          Jenis jabatan
-                          {isAutoMatch && (
-                            <span
-                              title="Terdeteksi otomatis dari nama jabatan"
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            >
-                              ✦ otomatis
-                            </span>
-                          )}
-                        </span>
+                        <span>Jenis jabatan</span>
                         <select
                           autoComplete="off"
                           id="employee-jenis_jabatan"

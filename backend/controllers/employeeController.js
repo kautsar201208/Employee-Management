@@ -24,20 +24,29 @@ const normalizePhoneNumber = (phone) => {
 };
 
 const parseStatusAndKeterangan = (rawStatus, existingKeterangan) => {
-    if (existingKeterangan) {
-        return { status: rawStatus || "", keterangan: existingKeterangan };
+    let status = rawStatus ? String(rawStatus).trim() : "";
+    let keterangan = existingKeterangan ? String(existingKeterangan).trim() : "";
+
+    if (keterangan && /cuti di luar tanggungan negara/i.test(keterangan)) {
+        keterangan = "CLTN";
     }
-    if (!rawStatus) {
-        return { status: "", keterangan: "" };
+
+    if (!keterangan || keterangan === "—") {
+        if (rawStatus) {
+            const match = String(rawStatus).match(/^(.*?)\s*[\(\-\[]\s*(Tugas Belajar|Cuti di Luar Tanggungan Negara|CLTN|Pensiun)\s*[\)\]]?$/i);
+            if (match) {
+                status = match[1].trim();
+                const matchedKet = match[2].trim();
+                keterangan = /cuti di luar tanggungan negara/i.test(matchedKet) ? "CLTN" : matchedKet;
+            }
+        }
     }
-    const match = String(rawStatus).match(/^(.*?)\s*[\(\-\[]\s*(Tugas Belajar|Cuti di Luar Tanggungan Negara)\s*[\)\]]?$/i);
-    if (match) {
-        return {
-            status: match[1].trim(),
-            keterangan: match[2].trim()
-        };
+
+    if (!keterangan || keterangan === "—" || keterangan.trim() === "") {
+        keterangan = "Aktif";
     }
-    return { status: rawStatus, keterangan: "" };
+
+    return { status, keterangan };
 };
 
 const formatEmployeeData = (emp) => {
@@ -46,7 +55,7 @@ const formatEmployeeData = (emp) => {
     return {
         ...emp,
         status,
-        keterangan: keterangan || emp.keterangan || null
+        keterangan: keterangan || "Aktif"
     };
 };
 
@@ -258,7 +267,7 @@ const searchEmployees = async (req, res) => {
             success: true,
             message: "Pencarian pegawai berhasil",
             total: data.length,
-            data: data
+            data: data.map(formatEmployeeData)
         });
 
     } catch (error) {
@@ -352,7 +361,7 @@ const filterEmployees = async (req, res) => {
             success: true,
             message: "Filter data pegawai berhasil",
             total: data.length,
-            data: data
+            data: data.map(formatEmployeeData)
         });
 
     } catch (error) {
@@ -433,7 +442,11 @@ const createEmployee = async (req, res) => {
         };
 
         if (keterangan !== undefined) {
-            employeeData.keterangan = keterangan;
+            let cleanKet = (keterangan || "").trim();
+            if (/cuti di luar tanggungan negara/i.test(cleanKet)) {
+                cleanKet = "CLTN";
+            }
+            employeeData.keterangan = cleanKet || "Aktif";
         }
 
         let { data, error } = await supabase
@@ -444,8 +457,12 @@ const createEmployee = async (req, res) => {
 
         if (error && error.message && error.message.includes("keterangan")) {
             delete employeeData.keterangan;
-            if (keterangan) {
-                employeeData.status = `${status || "PNS"} (${keterangan})`;
+            const cleanKet = (keterangan || "").trim();
+            const normalizedKet = /cuti di luar tanggungan negara/i.test(cleanKet) ? "CLTN" : cleanKet;
+            if (normalizedKet && normalizedKet !== "Aktif") {
+                employeeData.status = `${status || "PNS"} (${normalizedKet})`;
+            } else if (status) {
+                employeeData.status = status;
             }
             const retry = await supabase
                 .from("employees")
@@ -553,7 +570,11 @@ const updateEmployee = async (req, res) => {
         };
 
         if (keterangan !== undefined) {
-            updateData.keterangan = keterangan;
+            let cleanKet = (keterangan || "").trim();
+            if (/cuti di luar tanggungan negara/i.test(cleanKet)) {
+                cleanKet = "CLTN";
+            }
+            updateData.keterangan = cleanKet || "Aktif";
         }
 
         let { data, error } = await supabase
@@ -565,8 +586,10 @@ const updateEmployee = async (req, res) => {
 
         if (error && error.message && error.message.includes("keterangan")) {
             delete updateData.keterangan;
-            if (keterangan) {
-                updateData.status = `${status || "PNS"} (${keterangan})`;
+            const cleanKet = (keterangan || "").trim();
+            const normalizedKet = /cuti di luar tanggungan negara/i.test(cleanKet) ? "CLTN" : cleanKet;
+            if (normalizedKet && normalizedKet !== "Aktif") {
+                updateData.status = `${status || "PNS"} (${normalizedKet})`;
             } else if (status) {
                 updateData.status = status;
             }

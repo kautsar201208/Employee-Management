@@ -13,9 +13,9 @@ export default function PensionPage() {
     <main className="dashboard-shell">
       <Sidebar activePage="pensiun" />
 
-      <section className="dashboard-main">
+      <section className="dashboard-main min-w-0 max-w-full">
         <Navbar />
-        <div className="employees-content space-y-5">
+        <div className="employees-content min-w-0 max-w-full space-y-5">
           <PensionDirectory />
         </div>
       </section>
