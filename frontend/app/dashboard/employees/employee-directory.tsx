@@ -956,7 +956,7 @@ export default function EmployeeDirectory() {
             Kelola Data Karyawan
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Akses, tinjau, dan kelola seluruh direktori data kepegawaian ASN secara terpusat.
+            Akses, tinjau, dan kelola seluruh direktori data kepegawaian PNS secara terpusat.
           </p>
         </div>
 
