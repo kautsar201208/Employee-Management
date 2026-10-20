@@ -375,7 +375,7 @@ export default function KGBDirectory() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
+        <div className="flex items-center gap-2 self-start sm:self-center">
           <button
             onClick={() => setShowRuleInfo((prev) => !prev)}
             className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs cursor-pointer"
@@ -395,20 +395,6 @@ export default function KGBDirectory() {
           >
             <Download size={14} className="text-slate-600" />
             <span>Ekspor CSV</span>
-          </button>
-
-          <button
-            onClick={fetchEmployees}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#2563EB] hover:bg-blue-700 rounded-xl transition-all shadow-xs disabled:opacity-60 cursor-pointer"
-            title="Muat ulang data"
-            type="button"
-          >
-            <RefreshCw
-              size={14}
-              className={isLoading ? "animate-spin text-white" : "text-white"}
-            />
-            <span>Segarkan</span>
           </button>
         </div>
       </header>

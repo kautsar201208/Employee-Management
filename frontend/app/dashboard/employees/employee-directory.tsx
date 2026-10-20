@@ -1016,21 +1016,6 @@ export default function EmployeeDirectory() {
             Akses, tinjau, dan kelola seluruh direktori data kepegawaian PNS secara terpusat.
           </p>
         </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-center">
-          <button
-            onClick={fetchEmployees}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-60"
-            title="Muat ulang data"
-          >
-            <RefreshCw
-              size={14}
-              className={isLoading ? "animate-spin text-[#2563EB]" : "text-slate-600"}
-            />
-            <span>Segarkan</span>
-          </button>
-        </div>
       </header>
 
       <motion.section

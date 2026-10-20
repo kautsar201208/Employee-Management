@@ -376,20 +376,6 @@ export default function PensionDirectory() {
             <Download size={14} className="text-slate-600" />
             <span>Ekspor CSV</span>
           </button>
-
-          <button
-            onClick={fetchEmployees}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#2563EB] hover:bg-blue-700 rounded-xl transition-all shadow-xs disabled:opacity-60"
-            title="Muat ulang data"
-            type="button"
-          >
-            <RefreshCw
-              size={14}
-              className={isLoading ? "animate-spin text-white" : "text-white"}
-            />
-            <span>Segarkan</span>
-          </button>
         </div>
       </header>
 

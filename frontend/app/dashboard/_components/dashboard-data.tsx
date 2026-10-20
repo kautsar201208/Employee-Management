@@ -339,19 +339,6 @@ export default function DashboardData() {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-center">
-          <button
-            onClick={loadData}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-60"
-            title="Muat ulang ringkasan"
-          >
-            <RefreshCw
-              size={14}
-              className={isLoading ? "animate-spin text-[#2563EB]" : "text-slate-600"}
-            />
-            <span>Segarkan</span>
-          </button>
-
           <div
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl shadow-xs"
             suppressHydrationWarning
