@@ -13,6 +13,7 @@ import {
   getMyAccount,
   ApiEmployee,
 } from "@/lib/api";
+import { formatIndonesianDate } from "@/lib/employee-date";
 import {
   Briefcase,
   Menu,
@@ -175,9 +176,9 @@ export default function ProfilePage() {
   // Derived data
   const displayName = employee?.nama_lengkap || employee?.nama || "-";
   const displayPhoto = employee?.profile_image || null;
-  const masaKerja = hitungMasaKerja(employee?.tmt_golongan);
-  const tmtSejak = employee?.tmt_golongan
-    ? `TMT Sejak ${new Date(employee.tmt_golongan).getFullYear()}`
+  const masaKerja = hitungMasaKerja(employee?.tmt_cpns);
+  const tmtSejak = employee?.tmt_cpns
+    ? `TMT CPNS Sejak ${new Date(employee.tmt_cpns).getFullYear()}`
     : "-";
 
   return (
@@ -527,6 +528,9 @@ export default function ProfilePage() {
                         <InfoRow label="Jenis Jabatan" value={employee.jenis_jabatan} />
                         <InfoRow label="Pangkat / Golongan" value={employee.pangkat_golongan} />
                         <InfoRow label="TMT Golongan" value={employee.tmt_golongan} />
+                        <InfoRow label="TMT CPNS" value={formatIndonesianDate(employee.tmt_cpns)} />
+                        <InfoRow label="TMT KGB Terakhir" value={formatIndonesianDate(employee.tmt_kgb_terakhir)} />
+                        <InfoRow label="KGB Selanjutnya" value={formatIndonesianDate(employee.kgb_selanjutnya)} />
                         <InfoRow label="Tim Kerja / Unit" value={formatTimKerja(employee.tim_kerja)} />
                         <InfoRow label="Status Kepegawaian" value={employee.status} />
                       </div>

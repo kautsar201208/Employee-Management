@@ -24,6 +24,7 @@ import {
   type ApiEmployee,
   type EmployeeInput,
 } from "@/lib/api";
+import { formatIndonesianDate } from "@/lib/employee-date";
 
 const EMPLOYEES_PER_PAGE = 25;
 
@@ -38,6 +39,9 @@ type EmployeeFormValues = {
   keterangan: string;
   pangkat_golongan: string;
   tmt_golongan: string;
+  tmt_cpns: string;
+  tmt_kgb_terakhir: string;
+  kgb_selanjutnya: string;
   jenjang_pendidikan: string;
   jurusan_pendidikan: string;
   jenis_kelamin: string;
@@ -64,6 +68,9 @@ const employeeFormFields: Array<{
   { key: "keterangan", label: "Keterangan" },
   { key: "pangkat_golongan", label: "Pangkat / golongan" },
   { key: "tmt_golongan", label: "TMT golongan", type: "date" },
+  { key: "tmt_cpns", label: "TMT CPNS", type: "date" },
+  { key: "tmt_kgb_terakhir", label: "TMT KGB terakhir", type: "date" },
+  { key: "kgb_selanjutnya", label: "KGB selanjutnya", type: "date" },
   { key: "jenjang_pendidikan", label: "Jenjang pendidikan" },
   { key: "jurusan_pendidikan", label: "Jurusan pendidikan" },
   { key: "jenis_kelamin", label: "Jenis kelamin" },
@@ -84,6 +91,9 @@ function createEmptyEmployeeForm(): EmployeeFormValues {
     keterangan: "Aktif",
     pangkat_golongan: "",
     tmt_golongan: "",
+    tmt_cpns: "",
+    tmt_kgb_terakhir: "",
+    kgb_selanjutnya: "",
     jenjang_pendidikan: "",
     jurusan_pendidikan: "",
     jenis_kelamin: "",
@@ -274,6 +284,9 @@ function toEmployeeForm(employee: ApiEmployee): EmployeeFormValues {
     keterangan: keterangan === "—" ? "Aktif" : (keterangan || "Aktif"),
     pangkat_golongan: employee.pangkat_golongan || "",
     tmt_golongan: dateValue(employee.tmt_golongan),
+    tmt_cpns: dateValue(employee.tmt_cpns),
+    tmt_kgb_terakhir: dateValue(employee.tmt_kgb_terakhir),
+    kgb_selanjutnya: dateValue(employee.kgb_selanjutnya),
     jenjang_pendidikan: employee.jenjang_pendidikan || "",
     jurusan_pendidikan: employee.jurusan_pendidikan || "",
     jenis_kelamin: employee.jenis_kelamin || "",
@@ -304,6 +317,9 @@ function toEmployeeInput(values: EmployeeFormValues): EmployeeInput {
     keterangan: values.keterangan?.trim() || "Aktif",
     pangkat_golongan: optionalValue(values.pangkat_golongan),
     tmt_golongan: optionalValue(values.tmt_golongan),
+    tmt_cpns: optionalValue(values.tmt_cpns),
+    tmt_kgb_terakhir: optionalValue(values.tmt_kgb_terakhir),
+    kgb_selanjutnya: optionalValue(values.kgb_selanjutnya),
     jenjang_pendidikan: optionalValue(values.jenjang_pendidikan),
     jurusan_pendidikan: optionalValue(values.jurusan_pendidikan),
     jenis_kelamin: optionalValue(values.jenis_kelamin),
@@ -1749,11 +1765,23 @@ export default function EmployeeDirectory() {
                 </div>
 
                 <div>
+                  <dt>TMT CPNS</dt>
+                  <dd>{formatIndonesianDate(selectedProfile.tmt_cpns)}</dd>
+                </div>
+
+                <div>
+                  <dt>TMT KGB Terakhir</dt>
+                  <dd>{formatIndonesianDate(selectedProfile.tmt_kgb_terakhir)}</dd>
+                </div>
+
+                <div>
+                  <dt>KGB Selanjutnya</dt>
+                  <dd>{formatIndonesianDate(selectedProfile.kgb_selanjutnya)}</dd>
+                </div>
+
+                <div>
                   <dt>TMT Golongan</dt>
-                  <dd>
-                    {selectedProfile.tmt_golongan ||
-                      "—"}
-                  </dd>
+                  <dd>{formatIndonesianDate(selectedProfile.tmt_golongan)}</dd>
                 </div>
 
                 <div>

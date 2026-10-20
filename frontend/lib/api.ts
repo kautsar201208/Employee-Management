@@ -32,7 +32,11 @@ export type ApiEmployee = {
   jenis_jabatan?: string | null;
   tim_kerja?: string | null;
   status?: string | null;
+  tmt_pns?: string | null;
   tmt_golongan?: string | null;
+  tmt_cpns?: string | null;
+  tmt_kgb_terakhir?: string | null;
+  kgb_selanjutnya?: string | null;
   pangkat_golongan?: string | null;
   jenjang_pendidikan?: string | null;
   jurusan_pendidikan?: string | null;
