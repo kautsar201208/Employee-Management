@@ -47,10 +47,6 @@ export type ApiEmployee = {
   nomor_ktp?: string | null;
   nomor_ponsel?: string | null;
   keterangan?: string | null;
-  tmt_cpns?: string | null;
-  tmt_pns?: string | null;
-  tmt_kgb_terakhir?: string | null;
-  kgb_selanjutnya?: string | null;
 };
 
 export type EmployeeInput = Omit<ApiEmployee, "id" | "no" | "nama_lengkap" | "nip"> & {
@@ -68,7 +64,27 @@ export type AttendanceSummary = {
   forgot_clock_out_count: number;
   forgotten_attendance_alpha_days: number | string;
   total_alpha_equivalent_days: number | string;
-  employee: Pick<ApiEmployee, "nip" | "nama" | "nama_lengkap" | "jabatan">;
+  employee: Pick<
+    ApiEmployee,
+    | "nip"
+    | "nama"
+    | "nama_lengkap"
+    | "jabatan"
+    | "status"
+    | "pangkat_golongan"
+    | "tim_kerja"
+    | "profile_image"
+  >;
+};
+
+export type AttendanceSummaryInput = {
+  employee_id: string;
+  attendance_year: number;
+  alpha_days: number;
+  late_minutes: number;
+  early_leave_minutes: number;
+  forgot_clock_in_count: number;
+  forgot_clock_out_count: number;
 };
 
 async function readApiResponse<T>(response: Response): Promise<ApiResponse<T>> {
@@ -281,6 +297,75 @@ export async function getAttendanceSummaries(
     throw new Error("Backend tidak mengirim data rekap kehadiran.");
   }
   return result.data;
+}
+
+async function mutateAttendanceSummary(
+  accessToken: string,
+  method: "POST" | "PUT" | "DELETE",
+  summary?: AttendanceSummaryInput,
+  employeeId?: string,
+  year?: number,
+): Promise<void> {
+  const path = employeeId && year !== undefined
+    ? `/api/attendance/${encodeURIComponent(employeeId)}/${year}`
+    : "/api/attendance";
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...(summary ? { "Content-Type": "application/json" } : {}),
+      },
+      body: summary ? JSON.stringify(summary) : undefined,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+    throw new Error(`Backend tidak dapat dihubungi di ${API_BASE_URL}.`);
+  }
+
+  if (response.status === 401) {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    throw new Error("Sesi login tidak valid. Silakan masuk kembali.");
+  }
+  await readApiResponse<unknown>(response);
+}
+
+export function createAttendanceSummary(
+  accessToken: string,
+  summary: AttendanceSummaryInput,
+): Promise<void> {
+  return mutateAttendanceSummary(accessToken, "POST", summary);
+}
+
+export function updateAttendanceSummary(
+  accessToken: string,
+  summary: AttendanceSummaryInput,
+): Promise<void> {
+  return mutateAttendanceSummary(
+    accessToken,
+    "PUT",
+    summary,
+    summary.employee_id,
+    summary.attendance_year,
+  );
+}
+
+export function deleteAttendanceSummary(
+  accessToken: string,
+  employeeId: string,
+  year: number,
+): Promise<void> {
+  return mutateAttendanceSummary(
+    accessToken,
+    "DELETE",
+    undefined,
+    employeeId,
+    year,
+  );
 }
 
 export type DocumentItem = {
