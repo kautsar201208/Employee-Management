@@ -47,6 +47,10 @@ export type ApiEmployee = {
   nomor_ktp?: string | null;
   nomor_ponsel?: string | null;
   keterangan?: string | null;
+  tmt_cpns?: string | null;
+  tmt_pns?: string | null;
+  tmt_kgb_terakhir?: string | null;
+  kgb_selanjutnya?: string | null;
 };
 
 export type EmployeeInput = Omit<ApiEmployee, "id" | "no" | "nama_lengkap" | "nip"> & {

@@ -1,9 +1,9 @@
-import { House, UsersRound, FolderKanban, UserCheck, CalendarClock, ClipboardCheck } from "lucide-react";
+import { House, UsersRound, FolderKanban, UserCheck, CalendarClock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 type SidebarProps = {
-  activePage: "dashboard" | "employees" | "documents" | "outsourcing" | "pensiun" | "attendance";
+  activePage: "dashboard" | "employees" | "documents" | "outsourcing" | "pensiun";
 };
 
 export default function Sidebar({ activePage }: SidebarProps) {
@@ -26,7 +26,6 @@ export default function Sidebar({ activePage }: SidebarProps) {
         <Link className={`nav-item${activePage === "outsourcing" ? " active" : ""}`} href="/dashboard/outsourcing" aria-current={activePage === "outsourcing" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><UserCheck size={20} strokeWidth={1.8} /></span>Data Alih Daya</Link>
         <Link className={`nav-item${activePage === "documents" ? " active" : ""}`} href="/dashboard/documents" aria-current={activePage === "documents" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><FolderKanban size={20} strokeWidth={1.8} /></span>Berkas Pegawai</Link>
         <Link className={`nav-item${activePage === "pensiun" ? " active" : ""}`} href="/dashboard/pensiun" aria-current={activePage === "pensiun" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><CalendarClock size={20} strokeWidth={1.8} /></span>Data Pensiun</Link>
-        <Link className={`nav-item${activePage === "attendance" ? " active" : ""}`} href="/dashboard/attendance" aria-current={activePage === "attendance" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><ClipboardCheck size={20} strokeWidth={1.8} /></span>Rekap Kehadiran</Link>
       </nav>
       <div className="sidebar-bottom">
         <div className="sidebar-org-footer">
@@ -35,4 +34,4 @@ export default function Sidebar({ activePage }: SidebarProps) {
       </div>
     </aside>
   );
-}
+}
