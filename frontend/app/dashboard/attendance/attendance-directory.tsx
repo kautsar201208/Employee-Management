@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Image from "next/image";
 import {
+  ChevronLeft,
+  ChevronRight,
   Eye,
   Pencil,
   Plus,
@@ -43,6 +45,52 @@ function getEmployeeName(row: AttendanceSummary): string {
   return row.employee?.nama_lengkap || row.employee?.nama || "Nama belum diisi";
 }
 
+function getInitials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "?"
+  );
+}
+
+function AttendanceEmployeeAvatar({
+  imageUrl,
+  name,
+  className = "w-8 h-8 rounded-full bg-blue-100 text-[#2563EB] font-bold text-xs flex items-center justify-center shrink-0",
+  imageSize = 48,
+}: {
+  imageUrl: string | null | undefined;
+  name: string;
+  className?: string;
+  imageSize?: number;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  if (!imageUrl || imageFailed) {
+    return (
+      <div aria-hidden="true" className={className}>
+        {getInitials(name)}
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      alt={`Foto profil ${name}`}
+      className={`${className} object-cover`}
+      height={imageSize}
+      onError={() => setImageFailed(true)}
+      src={imageUrl}
+      unoptimized
+      width={imageSize}
+    />
+  );
+}
+
 type AttendanceFormValues = {
   employee_id: string;
   attendance_year: string;
@@ -80,6 +128,14 @@ export default function AttendanceDirectory() {
   const [employees, setEmployees] = useState<ApiEmployee[]>([]);
   const [selectedYear, setSelectedYear] = useState("2026");
   const [query, setQuery] = useState("");
+
+  const employeeMap = useMemo(() => {
+    const map = new Map<string, ApiEmployee>();
+    for (const emp of employees) {
+      if (emp.id) map.set(String(emp.id), emp);
+    }
+    return map;
+  }, [employees]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -89,6 +145,8 @@ export default function AttendanceDirectory() {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<AttendanceSummary | null>(null);
   const [profileImageError, setProfileImageError] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
 
   useEffect(() => {
     const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
@@ -139,6 +197,15 @@ export default function AttendanceDirectory() {
         .some((value) => value!.toLocaleLowerCase("id-ID").includes(normalizedQuery)),
     );
   }, [query, yearRows]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, selectedYear, rowsPerPage]);
+
+  const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+  const activePage = Math.min(currentPage, Math.max(totalPages, 1));
+  const firstIndex = (activePage - 1) * rowsPerPage;
+  const visibleRows = filteredRows.slice(firstIndex, firstIndex + rowsPerPage);
 
   const totals = useMemo(
     () =>
@@ -358,63 +425,161 @@ export default function AttendanceDirectory() {
         </div>
       </div>
 
-      <div className="employees-table-panel">
-        <div className="employees-table-wrap">
-          <table className="employees-table attendance-table">
+      {/* MAIN ATTENDANCE TABLE */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden min-w-0 max-w-full w-full">
+        <div className="overflow-x-auto w-full max-w-full overscroll-x-contain table-scroll-container">
+          <table className="w-full min-w-[1100px] text-left border-collapse text-xs text-slate-700">
             <thead>
-              <tr>
-                <th>No.</th>
-                <th>Nama / NIP</th>
-                <th>Alpha</th>
-                <th>Terlambat</th>
-                <th>Pulang Awal</th>
-                <th>Lupa Absen Datang</th>
-                <th>Lupa Absen Pulang</th>
-                <th>Ekuivalen Lupa Absen</th>
-                <th>Total Alpha Ekuivalen</th>
-                <th>Aksi</th>
+              <tr className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-200/80 uppercase tracking-wider text-[11px]">
+                <th className="py-3 px-4 w-12 text-center whitespace-nowrap">No</th>
+                <th className="py-3 px-4 min-w-[220px] whitespace-nowrap">Pegawai</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Alpha</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Terlambat</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Pulang Awal</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Lupa Absen Datang</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Lupa Absen Pulang</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Ekuivalen Lupa Absen</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Total Alpha Ekuivalen</th>
+                <th className="py-3 px-4 w-28 text-center whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td className="attendance-table-message" colSpan={10}>
-                    Memuat rekap kehadiran...
+                  <td className="py-12 text-center text-slate-400" colSpan={10}>
+                    <p className="font-medium text-xs">Memuat rekap kehadiran...</p>
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td className="attendance-table-message" colSpan={10}>
-                    {error
-                      ? "Rekap kehadiran tidak dapat dimuat."
-                      : "Tidak ada data kehadiran untuk pilihan ini."}
+                  <td className="py-12 text-center text-slate-400" colSpan={10}>
+                    <p className="font-semibold text-slate-600 text-xs">
+                      {error
+                        ? "Rekap kehadiran tidak dapat dimuat."
+                        : "Tidak ada data kehadiran untuk pilihan ini."}
+                    </p>
                   </td>
                 </tr>
               ) : (
-                filteredRows.map((row, index) => (
-                  <tr key={`${row.employee_id}-${row.attendance_year}`}>
-                    <td>{index + 1}</td>
-                    <td>
-                      <div className="attendance-employee">
-                        <strong>{getEmployeeName(row)}</strong>
-                        <span>{row.employee?.nip || "NIP tidak tersedia"}</span>
-                      </div>
-                    </td>
-                    <td>{integerFormatter.format(row.alpha_days)}</td>
-                    <td>{integerFormatter.format(row.late_minutes)} mnt</td>
-                    <td>{integerFormatter.format(row.early_leave_minutes)} mnt</td>
-                    <td>{integerFormatter.format(row.forgot_clock_in_count)}</td>
-                    <td>{integerFormatter.format(row.forgot_clock_out_count)}</td>
-                    <td>{formatDays(row.forgotten_attendance_alpha_days)} hari</td>
-                    <td className="attendance-total-cell">
-                      {formatDays(row.total_alpha_equivalent_days)} hari
-                    </td>
-                    <td>
-                      <div className="attendance-row-actions">
-                        {row.employee?.profile_image && (
+                visibleRows.map((row, index) => {
+                  const emp = row.employee || employeeMap.get(String(row.employee_id));
+                  const empName = emp?.nama_lengkap || emp?.nama || getEmployeeName(row);
+                  const empNip = emp?.nip || "NIP tidak tersedia";
+                  const profileImage = emp?.profile_image;
+                  const rowNumber = firstIndex + index + 1;
+
+                  return (
+                    <tr
+                      key={`${row.employee_id}-${row.attendance_year}`}
+                      className="hover:bg-slate-50/70 transition-colors group"
+                    >
+                      {/* NO */}
+                      <td className="py-3 px-4 text-center text-slate-400 font-medium whitespace-nowrap text-xs">
+                        {rowNumber}
+                      </td>
+
+                      {/* PEGAWAI */}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <AttendanceEmployeeAvatar
+                            key={`${row.employee_id}-${profileImage ?? ""}`}
+                            imageUrl={profileImage}
+                            name={empName}
+                          />
+                          <div>
+                            <div className="font-bold text-slate-800 group-hover:text-[#2563EB] transition-colors whitespace-nowrap text-xs">
+                              {empName}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
+                              {empNip}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* ALPHA */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap text-xs">
+                        {row.alpha_days > 0 ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                            {integerFormatter.format(row.alpha_days)} hari
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-normal">0 hari</span>
+                        )}
+                      </td>
+
+                      {/* TERLAMBAT */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap text-xs text-slate-600">
+                        {row.late_minutes > 0 ? (
+                          <span className="font-medium text-amber-700">
+                            {integerFormatter.format(row.late_minutes)} mnt
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">0 mnt</span>
+                        )}
+                      </td>
+
+                      {/* PULANG AWAL */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap text-xs text-slate-600">
+                        {row.early_leave_minutes > 0 ? (
+                          <span className="font-medium text-amber-700">
+                            {integerFormatter.format(row.early_leave_minutes)} mnt
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">0 mnt</span>
+                        )}
+                      </td>
+
+                      {/* LUPA ABSEN DATANG */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap text-xs text-slate-600">
+                        {row.forgot_clock_in_count > 0 ? (
+                          <span className="font-medium text-slate-700">
+                            {integerFormatter.format(row.forgot_clock_in_count)}x
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">0</span>
+                        )}
+                      </td>
+
+                      {/* LUPA ABSEN PULANG */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap text-xs text-slate-600">
+                        {row.forgot_clock_out_count > 0 ? (
+                          <span className="font-medium text-slate-700">
+                            {integerFormatter.format(row.forgot_clock_out_count)}x
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">0</span>
+                        )}
+                      </td>
+
+                      {/* EKUIVALEN LUPA ABSEN */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap text-xs text-slate-600">
+                        {numberValue(row.forgotten_attendance_alpha_days) > 0 ? (
+                          <span>{formatDays(row.forgotten_attendance_alpha_days)} hari</span>
+                        ) : (
+                          <span className="text-slate-400">0,00 hari</span>
+                        )}
+                      </td>
+
+                      {/* TOTAL ALPHA EKUIVALEN */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap text-xs">
+                        {numberValue(row.total_alpha_equivalent_days) > 0 ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                            {formatDays(row.total_alpha_equivalent_days)} hari
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            0,00 hari
+                          </span>
+                        )}
+                      </td>
+
+                      {/* AKSI */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap text-xs">
+                        <div className="flex items-center justify-center gap-1">
                           <button
-                            aria-label={`Lihat profil ${getEmployeeName(row)}`}
-                            className="attendance-icon-button"
+                            aria-label={`Lihat profil ${empName}`}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-[#2563EB] hover:bg-blue-50 transition-colors"
                             onClick={() => {
                               setProfileImageError(false);
                               setSelectedProfile(row);
@@ -422,35 +587,103 @@ export default function AttendanceDirectory() {
                             title="Lihat profil"
                             type="button"
                           >
-                            <Eye aria-hidden="true" size={15} />
+                            <Eye size={14} />
                           </button>
-                        )}
-                        <button
-                          aria-label={`Ubah rekap ${getEmployeeName(row)}`}
-                          className="attendance-icon-button"
-                          onClick={() => openEditForm(row)}
-                          title="Ubah rekap"
-                          type="button"
-                        >
-                          <Pencil aria-hidden="true" size={15} />
-                        </button>
-                        <button
-                          aria-label={`Hapus rekap ${getEmployeeName(row)}`}
-                          className="attendance-icon-button is-danger"
-                          onClick={() => void removeSummary(row)}
-                          title="Hapus rekap"
-                          type="button"
-                        >
-                          <Trash2 aria-hidden="true" size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          <button
+                            aria-label={`Ubah rekap ${empName}`}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                            onClick={() => openEditForm(row)}
+                            title="Ubah rekap"
+                            type="button"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            aria-label={`Hapus rekap ${empName}`}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            onClick={() => void removeSummary(row)}
+                            title="Hapus rekap"
+                            type="button"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
+
+        {/* PAGINATION BAR */}
+        {!isLoading && filteredRows.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200/80 bg-slate-50/50 text-xs text-slate-600">
+            <div className="flex items-center gap-3">
+              <div>
+                Menampilkan{" "}
+                <strong className="text-slate-900 font-bold">
+                  {firstIndex + 1}
+                </strong>{" "}
+                sampai{" "}
+                <strong className="text-slate-900 font-bold">
+                  {Math.min(firstIndex + rowsPerPage, filteredRows.length)}
+                </strong>{" "}
+                dari{" "}
+                <strong className="text-slate-900 font-bold">
+                  {filteredRows.length}
+                </strong>{" "}
+                pegawai
+              </div>
+
+              <div className="flex items-center gap-1.5 text-slate-500">
+                <span>Tampilkan:</span>
+                <select
+                  aria-label="Jumlah pegawai per halaman"
+                  value={rowsPerPage}
+                  onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                  className="px-2 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-[#2563EB]"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={activePage <= 1}
+                  className="inline-flex items-center justify-center p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="Halaman sebelumnya"
+                  aria-label="Halaman sebelumnya"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                <span className="px-2.5 py-1 text-xs font-semibold text-slate-800">
+                  Halaman {activePage} dari {totalPages || 1}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={activePage >= totalPages}
+                  className="inline-flex items-center justify-center p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="Halaman berikutnya"
+                  aria-label="Halaman berikutnya"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {isFormOpen && (
@@ -573,61 +806,66 @@ export default function AttendanceDirectory() {
         </div>
       )}
 
-      {selectedProfile && selectedProfile.employee?.profile_image && (
-        <div
-          className="employee-profile-backdrop"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setSelectedProfile(null);
-          }}
-        >
-          <section
-            aria-labelledby="attendance-profile-title"
-            aria-modal="true"
-            className="employee-profile-dialog attendance-profile-dialog"
-            role="dialog"
-          >
-            <header className="employee-profile-header">
-              <div className="employee-profile-identity">
-                {!profileImageError && (
-                  <Image
-                    alt={`Foto ${getEmployeeName(selectedProfile)}`}
-                    className="employee-profile-photo"
-                    height={80}
-                    onError={() => setProfileImageError(true)}
-                    src={selectedProfile.employee.profile_image}
-                    unoptimized
-                    width={80}
-                  />
-                )}
-                <div>
-                  <p className="eyebrow">Profil pegawai</p>
-                  <h2 id="attendance-profile-title">{getEmployeeName(selectedProfile)}</h2>
-                </div>
-              </div>
-              <button
-                aria-label="Tutup profil"
-                className="employee-profile-close"
-                onClick={() => setSelectedProfile(null)}
-                type="button"
+      {selectedProfile && (
+        (() => {
+          const emp = selectedProfile.employee || employeeMap.get(String(selectedProfile.employee_id));
+          const empName = emp?.nama_lengkap || emp?.nama || getEmployeeName(selectedProfile);
+          const photoUrl = emp?.profile_image;
+          return (
+            <div
+              className="employee-profile-backdrop"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setSelectedProfile(null);
+              }}
+            >
+              <section
+                aria-labelledby="attendance-profile-title"
+                aria-modal="true"
+                className="employee-profile-dialog attendance-profile-dialog"
+                role="dialog"
               >
-                <X size={19} />
-              </button>
-            </header>
-            {profileImageError ? (
-              <p className="employee-profile-message">
-                Foto profil pegawai tidak dapat dimuat.
-              </p>
-            ) : (
-              <dl className="employee-profile-fields">
-                <div><dt>NIP</dt><dd>{selectedProfile.employee.nip || "—"}</dd></div>
-                <div><dt>Jabatan</dt><dd>{selectedProfile.employee.jabatan || "—"}</dd></div>
-                <div><dt>Status</dt><dd>{selectedProfile.employee.status || "—"}</dd></div>
-                <div><dt>Pangkat / Golongan</dt><dd>{selectedProfile.employee.pangkat_golongan || "—"}</dd></div>
-                <div><dt>Tim Kerja</dt><dd>{selectedProfile.employee.tim_kerja || "—"}</dd></div>
-              </dl>
-            )}
-          </section>
-        </div>
+                <header className="employee-profile-header">
+                  <div className="employee-profile-identity">
+                    {photoUrl && !profileImageError ? (
+                      <Image
+                        alt={`Foto ${empName}`}
+                        className="employee-profile-photo"
+                        height={80}
+                        onError={() => setProfileImageError(true)}
+                        src={photoUrl}
+                        unoptimized
+                        width={80}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-blue-100 text-[#2563EB] font-bold text-xl flex items-center justify-center shrink-0">
+                        {getInitials(empName)}
+                      </div>
+                    )}
+                    <div>
+                      <p className="eyebrow">Profil pegawai</p>
+                      <h2 id="attendance-profile-title">{empName}</h2>
+                    </div>
+                  </div>
+                  <button
+                    aria-label="Tutup profil"
+                    className="employee-profile-close"
+                    onClick={() => setSelectedProfile(null)}
+                    type="button"
+                  >
+                    <X size={19} />
+                  </button>
+                </header>
+                <dl className="employee-profile-fields">
+                  <div><dt>NIP</dt><dd>{emp?.nip || "—"}</dd></div>
+                  <div><dt>Jabatan</dt><dd>{emp?.jabatan || "—"}</dd></div>
+                  <div><dt>Status</dt><dd>{emp?.status || "—"}</dd></div>
+                  <div><dt>Pangkat / Golongan</dt><dd>{emp?.pangkat_golongan || "—"}</dd></div>
+                  <div><dt>Tim Kerja</dt><dd>{emp?.tim_kerja || "—"}</dd></div>
+                </dl>
+              </section>
+            </div>
+          );
+        })()
       )}
     </section>
   );
