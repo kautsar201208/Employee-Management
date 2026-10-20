@@ -7,6 +7,7 @@ const employeeRoutes = require("./routes/employeeRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const outsourcingEmployeeRoutes = require("./routes/outsourcingEmployeeRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/documents", documentRoutes);
+app.use("/api/attendance", attendanceRoutes);
 
 // Route pegawai outsourcing
 app.use(

@@ -1915,6 +1915,62 @@ input {
   background: #f8faff;
 }
 
+.attendance-directory {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.attendance-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.attendance-summary-grid .employees-summary-card {
+  min-height: 104px;
+}
+
+.attendance-year-select {
+  flex: 0 0 150px;
+  max-width: 150px;
+}
+
+.attendance-row-count {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.attendance-table {
+  min-width: 1240px;
+}
+
+.attendance-employee {
+  display: grid;
+  gap: 4px;
+}
+
+.attendance-employee strong {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.attendance-employee span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.attendance-total-cell {
+  color: var(--blue-dark) !important;
+  font-weight: 700;
+}
+
+.attendance-table-message {
+  height: 120px;
+  color: var(--muted) !important;
+  text-align: center;
+}
+
 .employees-person {
   display: flex;
   min-width: 190px;

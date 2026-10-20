@@ -54,6 +54,19 @@ export type EmployeeInput = Omit<ApiEmployee, "id" | "no" | "nama_lengkap" | "ni
   nip: string;
 };
 
+export type AttendanceSummary = {
+  employee_id: string;
+  attendance_year: number;
+  alpha_days: number;
+  late_minutes: number;
+  early_leave_minutes: number;
+  forgot_clock_in_count: number;
+  forgot_clock_out_count: number;
+  forgotten_attendance_alpha_days: number | string;
+  total_alpha_equivalent_days: number | string;
+  employee: Pick<ApiEmployee, "nip" | "nama" | "nama_lengkap" | "jabatan">;
+};
+
 async function readApiResponse<T>(response: Response): Promise<ApiResponse<T>> {
   const result = await response.json().catch(() => null) as ApiResponse<T> | null;
 
@@ -233,6 +246,36 @@ export async function getDashboardSummary(accessToken: string, signal?: AbortSig
     throw new Error("Backend tidak mengirim ringkasan dashboard.");
   }
 
+  return result.data;
+}
+
+export async function getAttendanceSummaries(
+  accessToken: string,
+  signal?: AbortSignal,
+): Promise<AttendanceSummary[]> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/attendance`, {
+      headers: { Authorization: "Bearer " + accessToken },
+      cache: "no-store",
+      signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+    throw new Error(`Backend tidak dapat dihubungi di ${API_BASE_URL}.`);
+  }
+
+  if (response.status === 401) {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    throw new Error("Sesi login tidak valid. Silakan masuk kembali.");
+  }
+
+  const result = await readApiResponse<AttendanceSummary[]>(response);
+  if (!Array.isArray(result.data)) {
+    throw new Error("Backend tidak mengirim data rekap kehadiran.");
+  }
   return result.data;
 }
 
