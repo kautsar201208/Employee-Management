@@ -13,7 +13,7 @@ export default function AttendancePage() {
       <Sidebar activePage="attendance" />
       <section className="dashboard-main min-w-0 max-w-full">
         <Navbar />
-        <div className="employees-content min-w-0 max-w-full">
+        <div className="employees-content min-w-0 max-w-full space-y-5">
           <AttendanceDirectory />
         </div>
       </section>

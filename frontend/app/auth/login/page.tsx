@@ -117,7 +117,7 @@ export default function LoginPage() {
               </div>
             </div>
             <div className="form-row">
-              <label className="check-label">                     mihammad andru say sd
+              <label className="check-label">
                 <input defaultChecked={Boolean(rememberedEmail)} name="remember" onChange={(event) => {
                   if (!event.target.checked) localStorage.removeItem(REMEMBERED_EMAIL_KEY);
                 }} type="checkbox" />

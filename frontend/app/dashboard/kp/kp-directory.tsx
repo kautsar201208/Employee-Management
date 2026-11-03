@@ -334,102 +334,123 @@ export default function KPDirectory() {
 
   return (
     <div className="w-full min-w-0 max-w-full space-y-5">
-      {/* Header Banner */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6 md:p-7 min-w-0">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1.5 min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
-                <TrendingUp size={14} className="text-blue-600" />
-                Manajemen Karier ASN
-              </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                6 Periode KP BKN
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
-              Monitoring Kenaikan Pangkat (KP)
-            </h1>
-            <p className="text-xs sm:text-sm md:text-base text-slate-600 max-w-3xl">
-              Pemantauan kenaikan pangkat reguler setiap <strong>4 tahun</strong> bagi <strong>Jabatan Pelaksana</strong>, 
-              serta pemenuhan <strong>Point (Angka Kredit)</strong> bagi <strong>Jabatan Fungsional dan Struktural</strong>.
-            </p>
+      {/* HEADER SECTION */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
+        <div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+            <Link
+              href="/dashboard"
+              className="hover:text-[#2563EB] transition-colors"
+            >
+              Dashboard
+            </Link>
+            <ChevronRight size={13} className="text-slate-400" />
+            <span className="font-semibold text-slate-800">
+              Monitoring KP
+            </span>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 self-start lg:self-center">
-            <button
-              onClick={() => setShowRuleInfo((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition whitespace-nowrap"
-              title="Informasi aturan kenaikan pangkat"
-            >
-              <HelpCircle size={15} />
-              <span>Panduan Aturan</span>
-            </button>
-            <button
-              onClick={fetchEmployees}
-              disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition whitespace-nowrap"
-              title="Perbarui Data"
-            >
-              <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
-              <span>Muat Ulang</span>
-            </button>
-            <button
-              onClick={handleExportCSV}
-              disabled={filteredRecords.length === 0}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition whitespace-nowrap"
-            >
-              <Download size={15} />
-              <span>Ekspor CSV</span>
-            </button>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
+            Monitoring Kenaikan Pangkat (KP)
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Pemantauan kenaikan pangkat reguler setiap 4 tahun bagi Jabatan Pelaksana, serta pemenuhan Point (Angka Kredit) bagi Jabatan Fungsional dan Struktural.
+          </p>
         </div>
 
-        {/* Collapsible Info Box: Aturan KP */}
-        <AnimatePresence>
-          {showRuleInfo && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
-              <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200/60 text-xs text-slate-700 space-y-2">
-                <div className="flex items-center gap-2 font-bold text-blue-900 text-sm">
-                  <Clock size={16} className="text-blue-600" />
-                  <span>1. Jabatan Pelaksana (Sistem Waktu 4 Tahun)</span>
-                </div>
-                <p>
-                  Kenaikan pangkat reguler bagi pegawai Pelaksana diberikan <strong>setiap 4 tahun sekali</strong> 
-                  dihitung sejak TMT Pangkat/Golongan terakhir.
-                </p>
-                <ul className="list-disc pl-4 space-y-1 text-slate-600">
-                  <li><strong>Sudah Waktunya</strong>: Masa kerja dalam pangkat sudah mencapai ≥ 4 tahun.</li>
-                  <li><strong>Segera</strong>: Sisa waktu kurang dari 6 bulan menuju 4 tahun (berkas harus disiapkan).</li>
-                  <li><strong>Periode BKN</strong>: Diusulkan pada 6 periode (Februari, April, Juni, Agustus, Oktober, Desember).</li>
-                </ul>
-              </div>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+          <button
+            onClick={() => setShowRuleInfo((prev) => !prev)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs cursor-pointer"
+            title="Informasi aturan kenaikan pangkat"
+            type="button"
+          >
+            <HelpCircle size={14} className="text-[#2563EB]" />
+            <span>Panduan Aturan</span>
+          </button>
+          <button
+            onClick={fetchEmployees}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-60 cursor-pointer"
+            title="Perbarui Data"
+            type="button"
+          >
+            <RefreshCw size={14} className={isLoading ? "animate-spin text-slate-600" : "text-slate-600"} />
+            <span>Muat Ulang</span>
+          </button>
+          <button
+            onClick={handleExportCSV}
+            disabled={filteredRecords.length === 0}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-all disabled:opacity-60 cursor-pointer"
+            type="button"
+          >
+            <Download size={14} className="text-white" />
+            <span>Ekspor CSV</span>
+          </button>
+        </div>
+      </header>
 
-              <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/60 text-xs text-slate-700 space-y-2">
-                <div className="flex items-center gap-2 font-bold text-emerald-900 text-sm">
-                  <Award size={16} className="text-emerald-600" />
-                  <span>2. Selain Pelaksana (Sistem Point / Angka Kredit)</span>
+      {/* Collapsible Info Box: Aturan KP */}
+      <AnimatePresence>
+        {showRuleInfo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 text-slate-800 text-xs sm:text-sm shadow-2xs">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2 font-bold text-slate-900 text-sm sm:text-base">
+                  <TrendingUp size={16} className="text-[#2563EB]" />
+                  <span>Ketentuan &amp; Panduan Aturan Kenaikan Pangkat (KP)</span>
                 </div>
-                <p>
-                  Bagi pegawai Fungsional dan Struktural, kenaikan pangkat <strong>tidak berbasis waktu 4 tahun</strong>, 
-                  melainkan wajib memenuhi <strong>Point Angka Kredit Kumulatif (PAK)</strong>.
-                </p>
-                <ul className="list-disc pl-4 space-y-1 text-slate-600">
-                  <li><strong>Target Point</strong>: Ahli Pertama (50 pt), Ahli Muda (100 pt), Ahli Madya (150 pt), Ahli Utama (200 pt).</li>
-                  <li><strong>Point Terpenuhi (≥100%)</strong>: Siap diajukan kenaikan pangkat fungsional.</li>
-                  <li>Admin dapat mengklik <strong>Kelola Point</strong> untuk memperbarui perolehan angka kredit pegawai.</li>
-                </ul>
+                <button
+                  onClick={() => setShowRuleInfo(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer transition-colors"
+                  aria-label="Tutup panduan"
+                  type="button"
+                >
+                  <X size={16} />
+                </button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200/60 text-xs text-slate-700 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-blue-900 text-sm">
+                    <Clock size={16} className="text-blue-600" />
+                    <span>1. Jabatan Pelaksana (Sistem Waktu 4 Tahun)</span>
+                  </div>
+                  <p>
+                    Kenaikan pangkat reguler bagi pegawai Pelaksana diberikan <strong>setiap 4 tahun sekali</strong>{" "}
+                    dihitung sejak TMT Pangkat/Golongan terakhir.
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-600">
+                    <li><strong>Sudah Waktunya</strong>: Masa kerja dalam pangkat sudah mencapai ≥ 4 tahun.</li>
+                    <li><strong>Segera</strong>: Sisa waktu kurang dari 6 bulan menuju 4 tahun (berkas harus disiapkan).</li>
+                    <li><strong>Periode BKN</strong>: Diusulkan pada 6 periode (Februari, April, Juni, Agustus, Oktober, Desember).</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/60 text-xs text-slate-700 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-emerald-900 text-sm">
+                    <Award size={16} className="text-emerald-600" />
+                    <span>2. Selain Pelaksana (Sistem Point / Angka Kredit)</span>
+                  </div>
+                  <p>
+                    Bagi pegawai Fungsional dan Struktural, kenaikan pangkat <strong>tidak berbasis waktu 4 tahun</strong>,{" "}
+                    melainkan wajib memenuhi <strong>Point Angka Kredit Kumulatif (PAK)</strong>.
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-600">
+                    <li><strong>Target Point</strong>: Ahli Pertama (50 pt), Ahli Muda (100 pt), Ahli Madya (150 pt), Ahli Utama (200 pt).</li>
+                    <li><strong>Point Terpenuhi (≥100%)</strong>: Siap diajukan kenaikan pangkat fungsional.</li>
+                    <li>Admin dapat mengklik <strong>Kelola Point</strong> untuk memperbarui perolehan angka kredit pegawai.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Ringkasan Statistik (4 Cards Responsif: 4 kolom di layar lebar, 2 di tablet, 1 di mobile) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">

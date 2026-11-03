@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
   Eye,
   Pencil,
   Plus,
+  RefreshCw,
   Search,
   Trash2,
   X,
@@ -328,16 +330,50 @@ export default function AttendanceDirectory() {
   }
 
   return (
-    <section className="attendance-directory">
-      <div className="employees-heading">
+    <div className="space-y-5 min-w-0 max-w-full w-full">
+      {/* HEADER SECTION */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
         <div>
-          <h1>Rekap Kehadiran Pegawai</h1>
-          <p>
-            Akumulasi tahunan. Lupa absen dikonversi dengan rumus 120 menit ÷
-            450 menit per hari.
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+            <Link
+              href="/dashboard"
+              className="hover:text-[#2563EB] transition-colors"
+            >
+              Dashboard
+            </Link>
+            <ChevronRight size={13} className="text-slate-400" />
+            <span className="font-semibold text-slate-800">
+              Rekap Kehadiran
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
+            Rekap Kehadiran Pegawai
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Akumulasi tahunan. Lupa absen dikonversi dengan rumus 120 menit ÷ 450 menit per hari.
           </p>
         </div>
-      </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            onClick={async () => {
+              setIsLoading(true);
+              try {
+                await refreshSummaries();
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-60 cursor-pointer"
+            title="Perbarui Data"
+            type="button"
+          >
+            <RefreshCw size={14} className={isLoading ? "animate-spin text-slate-600" : "text-slate-600"} />
+            <span>Muat Ulang</span>
+          </button>
+        </div>
+      </header>
 
       {error && (
         <div className="dashboard-feedback" role="alert">
@@ -350,6 +386,7 @@ export default function AttendanceDirectory() {
         </div>
       )}
 
+      <section className="attendance-directory">
       <div className="employees-summary-grid attendance-summary-grid">
         <article className="employees-summary-card">
           <div>
@@ -867,6 +904,7 @@ export default function AttendanceDirectory() {
           );
         })()
       )}
-    </section>
+      </section>
+    </div>
   );
 }
