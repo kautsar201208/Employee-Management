@@ -343,7 +343,7 @@ input {
   grid-column: 2;
   min-width: 0;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   padding: 0 clamp(22px, 4vw, 58px) 44px;
 }
 
@@ -379,19 +379,57 @@ input {
 }
 
 .side-nav {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  padding: 0 14px 20px;
+}
+
+.side-nav > .nav-item:not(:first-child) {
+  margin-top: 3px;
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-group:first-child {
+  margin-top: 16px;
+}
+
+.nav-group:not(:first-child) {
+  margin-top: 24px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.nav-group .nav-caption {
+  margin: 0 0 8px;
   padding: 0 14px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+}
+
+.nav-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .nav-item {
   display: flex;
-  min-height: 50px;
+  min-height: 42px;
   align-items: center;
   gap: 12px;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0 14px;
-  color: #52627a;
+  color: #334155;
   font-size: 14px;
   font-weight: 500;
   transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
@@ -864,13 +902,15 @@ input {
 .home-topbar {
   position: sticky;
   top: 0;
-  z-index: 9;
+  z-index: 40;
   min-height: 82px;
   margin-inline: calc(-1 * clamp(22px, 4vw, 58px));
   justify-content: flex-end;
   gap: 24px;
   padding-inline: clamp(22px, 4vw, 58px);
   background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
 }
 
 .home-search {
@@ -3330,6 +3370,7 @@ input {
   .sidebar .brand-name { max-width: 240px; }
   .sidebar .nav-caption, .sidebar-bottom { display: none; }
   .side-nav { display: flex; overflow-x: auto; padding: 0; }
+  .nav-group, .nav-group-items { display: contents; }
   .nav-item { min-height: 36px; flex: 0 0 auto; padding-inline: 9px; }
   .dashboard-main { padding-inline: 20px; }
   .topbar { min-height: 60px; }
@@ -3473,8 +3514,13 @@ input {
 }
 
 .admin-theme[data-theme="dark"] .nav-caption,
+.admin-theme[data-theme="dark"] .nav-group .nav-caption,
 .admin-theme[data-theme="dark"] .nav-item {
   color: var(--muted);
+}
+
+.admin-theme[data-theme="dark"] .nav-group:not(:first-child) {
+  border-top-color: var(--line);
 }
 
 .admin-theme[data-theme="dark"] .nav-item:hover,

@@ -43,7 +43,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="topbar home-topbar">
+    <header className="topbar home-topbar sticky top-0 z-40">
       <div className="topbar-right home-topbar-right">
         <button
           aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
