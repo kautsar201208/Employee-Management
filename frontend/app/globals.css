@@ -900,6 +900,245 @@ input {
   gap: 12px;
 }
 
+.notification-control {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.notification-button {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  padding: 0;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.notification-button:hover,
+.notification-button:focus-visible,
+.notification-close:hover,
+.notification-close:focus-visible {
+  border-color: #c5d6fa;
+  background: var(--blue-light);
+}
+
+.notification-button:focus-visible,
+.notification-close:focus-visible {
+  outline: 2px solid var(--blue-dark);
+  outline-offset: 2px;
+}
+
+.notification-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid var(--paper);
+  border-radius: 999px;
+  padding-inline: 3px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.notification-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 20;
+  width: min(390px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 16px 40px rgb(15 23 42 / 20%);
+  color: var(--ink);
+}
+
+.notification-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 14px 16px;
+}
+
+.notification-heading > div,
+.notification-item-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.notification-heading strong {
+  font-size: 14px;
+}
+
+.notification-heading span,
+.notification-item-copy > span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.notification-close {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.notification-message {
+  margin: 0;
+  padding: 18px 16px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.notification-error {
+  color: #dc2626;
+}
+
+.notification-groups {
+  max-height: min(460px, 65vh);
+  overflow-y: auto;
+}
+
+.notification-group + .notification-group {
+  border-top: 1px solid var(--line);
+}
+
+.notification-group-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 11px;
+  border: 0;
+  padding: 12px 16px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 140ms ease;
+}
+
+.notification-group-toggle:hover,
+.notification-group-toggle:focus-visible {
+  background: var(--blue-light);
+}
+
+.notification-group-toggle:focus-visible {
+  outline: 2px solid var(--blue-dark);
+  outline-offset: -2px;
+}
+
+.notification-group-title {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+.notification-group-title strong {
+  font-size: 12px;
+}
+
+.notification-group-title > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.notification-group-count {
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 999px;
+  padding-inline: 6px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.notification-group-chevron {
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.notification-group-chevron.is-expanded {
+  transform: rotate(180deg);
+}
+
+.notification-list {
+  margin: 0;
+  border-top: 1px solid var(--line);
+  padding: 4px 0;
+  list-style: none;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 10px 16px 10px 59px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 140ms ease;
+}
+
+.notification-item:hover,
+.notification-item:focus-visible {
+  background: var(--blue-light);
+}
+
+.notification-item:focus-visible {
+  outline: 2px solid var(--blue-dark);
+  outline-offset: -2px;
+}
+
+.notification-item-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 9px;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.notification-item-copy {
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.notification-item-copy strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .home-logout-button {
   display: inline-flex;
   min-height: 36px;
@@ -1719,8 +1958,9 @@ input {
 .employees-heading h1 {
   margin: 0;
   color: var(--ink);
-  font-size: 25px;
-  font-weight: 650;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
 }
 
 .employees-heading p {
