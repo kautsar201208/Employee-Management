@@ -1,24 +1,112 @@
+import type { ElementType } from "react";
 import {
   CalendarClock,
   CalendarDays,
   ClipboardCheck,
   FolderKanban,
   House,
+  TrendingUp,
   UserCheck,
   UsersRound,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+type PageId =
+  | "dashboard"
+  | "employees"
+  | "documents"
+  | "outsourcing"
+  | "pensiun"
+  | "attendance"
+  | "kgb"
+  | "kp";
+
+type MenuItem = {
+  id: PageId;
+  label: string;
+  href: string;
+  icon: ElementType;
+};
+
+type MenuGroup = {
+  title: string;
+  items: MenuItem[];
+};
+
+const MENU_GROUPS: MenuGroup[] = [
+  {
+    title: "MENU UTAMA",
+    items: [
+      {
+        id: "dashboard",
+        label: "Beranda",
+        href: "/dashboard",
+        icon: House,
+      },
+    ],
+  },
+  {
+    title: "DATA KEPEGAWAIAN",
+    items: [
+      {
+        id: "employees",
+        label: "Data Karyawan",
+        href: "/dashboard/employees",
+        icon: UsersRound,
+      },
+      {
+        id: "outsourcing",
+        label: "Data Alih Daya",
+        href: "/dashboard/outsourcing",
+        icon: UserCheck,
+      },
+      {
+        id: "pensiun",
+        label: "Data Pensiun",
+        href: "/dashboard/pensiun",
+        icon: CalendarClock,
+      },
+      {
+        id: "documents",
+        label: "Berkas Pegawai",
+        href: "/dashboard/documents",
+        icon: FolderKanban,
+      },
+    ],
+  },
+  {
+    title: "KEHADIRAN",
+    items: [
+      {
+        id: "attendance",
+        label: "Rekap Kehadiran",
+        href: "/dashboard/attendance",
+        icon: ClipboardCheck,
+      },
+    ],
+  },
+  {
+    title: "KARIER & KESEJAHTERAAN",
+    items: [
+      {
+        id: "kgb",
+        label: "Monitoring KGB",
+        href: "/dashboard/kgb",
+        icon: CalendarDays,
+      },
+      {
+        id: "kp",
+        label: "Monitoring KP",
+        href: "/dashboard/kp",
+        icon: TrendingUp,
+      },
+    ],
+  },
+];
+
 type SidebarProps = {
-  activePage:
-    | "dashboard"
-    | "employees"
-    | "documents"
-    | "outsourcing"
-    | "pensiun"
-    | "attendance"
-    | "kgb";
+  activePage: PageId;
 };
 
 export default function Sidebar({ activePage }: SidebarProps) {
@@ -34,15 +122,31 @@ export default function Sidebar({ activePage }: SidebarProps) {
         />
         <span className="brand-name">Pusat Pengembangan dan Pelindungan Bahasa dan Sastra</span>
       </Link>
-      <p className="nav-caption">Menu Utama</p>
       <nav className="side-nav" aria-label="Navigasi utama">
-        <Link className={`nav-item${activePage === "dashboard" ? " active" : ""}`} href="/dashboard" aria-current={activePage === "dashboard" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><House size={20} strokeWidth={1.8} /></span>Beranda</Link>
-        <Link className={`nav-item${activePage === "employees" ? " active" : ""}`} href="/dashboard/employees" aria-current={activePage === "employees" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><UsersRound size={20} strokeWidth={1.8} /></span>Data Karyawan</Link>
-        <Link className={`nav-item${activePage === "outsourcing" ? " active" : ""}`} href="/dashboard/outsourcing" aria-current={activePage === "outsourcing" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><UserCheck size={20} strokeWidth={1.8} /></span>Data Alih Daya</Link>
-        <Link className={`nav-item${activePage === "documents" ? " active" : ""}`} href="/dashboard/documents" aria-current={activePage === "documents" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><FolderKanban size={20} strokeWidth={1.8} /></span>Berkas Pegawai</Link>
-        <Link className={`nav-item${activePage === "pensiun" ? " active" : ""}`} href="/dashboard/pensiun" aria-current={activePage === "pensiun" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><CalendarClock size={20} strokeWidth={1.8} /></span>Data Pensiun</Link>
-        <Link className={`nav-item${activePage === "attendance" ? " active" : ""}`} href="/dashboard/attendance" aria-current={activePage === "attendance" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><ClipboardCheck size={20} strokeWidth={1.8} /></span>Rekap Kehadiran</Link>
-        <Link className={`nav-item${activePage === "kgb" ? " active" : ""}`} href="/dashboard/kgb" aria-current={activePage === "kgb" ? "page" : undefined}><span className="nav-symbol" aria-hidden="true"><CalendarDays size={20} strokeWidth={1.8} /></span>Monitoring KGB</Link>
+        {MENU_GROUPS.map((group) => (
+          <div key={group.title} className="nav-group">
+            <p className="nav-caption">{group.title}</p>
+            <div className="nav-group-items">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activePage === item.id;
+                return (
+                  <Link
+                    key={item.id}
+                    className={`nav-item${isActive ? " active" : ""}`}
+                    href={item.href}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <span className="nav-symbol" aria-hidden="true">
+                      <Icon size={20} strokeWidth={1.8} />
+                    </span>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
       <div className="sidebar-bottom">
         <div className="sidebar-org-footer">
