@@ -1,6 +1,5 @@
-import Sidebar from "../_components/sidebar";
-import Navbar from "../_components/navbar";
 import PensionDirectory from "./pension-directory";
+import PageTransition from "../_components/page-transition";
 
 export const metadata = {
   title: "Data Pensiun Pegawai | Pusbanglin",
@@ -10,15 +9,10 @@ export const metadata = {
 
 export default function PensionPage() {
   return (
-    <main className="dashboard-shell">
-      <Sidebar activePage="pensiun" />
-
-      <section className="dashboard-main min-w-0 max-w-full">
-        <Navbar />
-        <div className="employees-content min-w-0 max-w-full space-y-5">
-          <PensionDirectory />
-        </div>
-      </section>
-    </main>
+    <PageTransition>
+      <div className="employees-content min-w-0 max-w-full space-y-5">
+        <PensionDirectory />
+      </div>
+    </PageTransition>
   );
 }

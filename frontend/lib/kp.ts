@@ -1,5 +1,5 @@
 import type { ApiEmployee } from "./api";
-import { parseTMTKerjaFromNIP } from "./pension";
+import { parseTMTKerjaFromNIP, parseBirthDate, determineBUP, calculateTMTPensiun } from "./pension";
 
 export type SkemaKP = "reguler_waktu" | "angka_kredit";
 
@@ -8,7 +8,9 @@ export type StatusKPPelaksana =
   | "segera"
   | "tahun_berjalan"
   | "belum_waktunya"
-  | "data_kurang";
+  | "data_kurang"
+  | "pangkat_maksimal_pendidikan"
+  | "satu_tingkat_terakhir";
 
 export type StatusKPPoint =
   | "terpenuhi"
@@ -73,6 +75,11 @@ export interface KPRecord {
     color: "rose" | "amber" | "blue" | "emerald" | "slate";
     isPriorityAlert: boolean; // Peringatan siap diusulkan SK KP
   };
+
+  // Informasi batas pangkat pendidikan (Pelaksana only)
+  pangkatMaksimalPendidikan: string | null;
+  isAtPangkatCeiling: boolean;
+  isSatuTingkatTerakhir: boolean;
 }
 
 export function parseDateString(raw?: string | null): Date | null {
@@ -199,6 +206,97 @@ export function getTargetPointByGolongan(golonganStr?: string | null): number {
  */
 const STORAGE_PREFIX = "pusbanglin_ak_point_";
 
+// ───────────────────────────────────────────────────────────────────
+// HELPER: Batas Pangkat Berdasarkan Pendidikan (Khusus Pelaksana)
+// ───────────────────────────────────────────────────────────────────
+
+const GOLONGAN_ORDER = [
+  "I/A", "I/B", "I/C", "I/D",
+  "II/A", "II/B", "II/C", "II/D",
+  "III/A", "III/B", "III/C", "III/D",
+  "IV/A", "IV/B", "IV/C", "IV/D", "IV/E",
+];
+
+/**
+ * Mengembalikan kode pangkat maksimal berdasarkan jenjang pendidikan.
+ * Mengembalikan null jika tidak ada batas (pendidikan tidak diketahui).
+ */
+export function getMaxPangkatByPendidikan(
+  jenjangPendidikan?: string | null
+): string | null {
+  if (!jenjangPendidikan) return null;
+  const edu = jenjangPendidikan.toUpperCase().trim();
+
+  // S3 / Doktor
+  if (edu.includes("S3") || edu.includes("S-3") || edu.includes("DOKTOR")) return "IV/B";
+  // S2 / Magister
+  if (edu.includes("S2") || edu.includes("S-2") || edu.includes("MAGISTER")) return "IV/A";
+  // S1 / D4 / Sarjana
+  if (
+    edu.includes("S1") || edu.includes("S-1") ||
+    edu.includes("D4") || edu.includes("D-4") ||
+    edu.includes("SARJANA") || edu.includes("D IV") || edu.includes("DIV")
+  ) return "III/D";
+  // D3 / Diploma III
+  if (
+    edu.includes("D3") || edu.includes("D-3") ||
+    edu.includes("DIPLOMA III") || edu.includes("DIPLOMA 3") ||
+    edu.includes("D III") || edu.includes("DIII")
+  ) return "III/C";
+  // SMA / SLTA / SMK / MA / D1 / D2
+  if (
+    edu.includes("SMA") || edu.includes("SLTA") || edu.includes("SMK") ||
+    edu.includes("D1") || edu.includes("D-1") || edu.includes("D2") || edu.includes("D-2") ||
+    (edu.includes("MA") && !edu.includes("MAGISTER") && !edu.includes("MADYA"))
+  ) return "III/B";
+
+  return null;
+}
+
+/**
+ * Mengekstrak kode golongan (misal: "III/B", "IV/A", "II/D") dari teks pangkat_golongan
+ */
+export function extractGolonganCode(str?: string | null): string | null {
+  if (!str) return null;
+  const clean = str.toUpperCase().replace(/\s*[-–]\s*/g, "/");
+  
+  // Cocokkan format standar Romawi + Slash + Huruf: IV/A-E, III/A-D, II/A-D, I/A-D
+  const match = clean.match(/(IV\/[A-E]|III\/[A-D]|II\/[A-D]|I\/[A-D])/);
+  if (match) return match[1];
+
+  // Fallback tanpa slash, misal IIIB, IIIA, IVA
+  const matchNoSlash = clean.match(/(IV[A-E]|III[A-D]|II[A-D]|I[A-D])/);
+  if (matchNoSlash) {
+    const raw = matchNoSlash[1];
+    if (raw.startsWith("IV")) return `IV/${raw.slice(2)}`;
+    if (raw.startsWith("III")) return `III/${raw.slice(3)}`;
+    if (raw.startsWith("II")) return `II/${raw.slice(2)}`;
+    if (raw.startsWith("I")) return `I/${raw.slice(1)}`;
+  }
+  return null;
+}
+
+/**
+ * Mengembalikan true jika currentGolongan >= maxGolongan (sudah di batas atau melebihi)
+ */
+export function isAtOrAbovePangkatCeiling(
+  currentGolongan?: string | null,
+  maxGolongan?: string | null
+): boolean {
+  if (!currentGolongan || !maxGolongan) return false;
+  
+  const curCode = extractGolonganCode(currentGolongan);
+  const maxCode = extractGolonganCode(maxGolongan);
+  
+  if (!curCode || !maxCode) return false;
+
+  const curIdx = GOLONGAN_ORDER.indexOf(curCode);
+  const maxIdx = GOLONGAN_ORDER.indexOf(maxCode);
+
+  if (curIdx < 0 || maxIdx < 0) return false;
+  return curIdx >= maxIdx;
+}
+
 export function getStoredPoint(nipOrId: string | number): number | null {
   if (typeof window === "undefined") return null;
   try {
@@ -252,9 +350,9 @@ export function processEmployeeKP(
   customPointsMap?: Record<string, number>
 ): KPRecord {
   const jenisJabatanClean = (employee.jenis_jabatan || "").trim().toLowerCase();
-  const isPelaksana = jenisJabatanClean === "pelaksana";
-  const isFungsional = jenisJabatanClean === "fungsional";
-  const isStruktural = jenisJabatanClean === "struktural";
+  const isFungsional = jenisJabatanClean.includes("fungsional");
+  const isStruktural = jenisJabatanClean.includes("struktural");
+  const isPelaksana = jenisJabatanClean.includes("pelaksana") || (!isFungsional && !isStruktural);
 
   const skemaKP: SkemaKP = isPelaksana ? "reguler_waktu" : "angka_kredit";
 
@@ -268,6 +366,27 @@ export function processEmployeeKP(
   }
   if (!tmtGolongan && employee.nip) {
     tmtGolongan = parseTMTKerjaFromNIP(employee.nip);
+  }
+
+  // ── Hitung batas pangkat berdasarkan pendidikan (hanya untuk Pelaksana) ──
+  const maxPangkatPendidikan = isPelaksana
+    ? getMaxPangkatByPendidikan(employee.jenjang_pendidikan)
+    : null;
+  const atPangkatCeiling = isPelaksana
+    ? isAtOrAbovePangkatCeiling(employee.pangkat_golongan, maxPangkatPendidikan)
+    : false;
+
+  // Cek apakah mendekati pensiun (sisa ≤ 4 tahun = 1 siklus KP)
+  let nearPension = false;
+  if (atPangkatCeiling) {
+    const birthDate = parseBirthDate(employee.tanggal_lahir, employee.nip);
+    if (birthDate) {
+      const bupResult = determineBUP(employee.jabatan, employee.jenis_jabatan);
+      const tmtPensiun = calculateTMTPensiun(birthDate, bupResult.bup);
+      const msUntilPension = tmtPensiun.getTime() - referenceDate.getTime();
+      const yearsUntilPension = msUntilPension / (1000 * 60 * 60 * 24 * 365.25);
+      nearPension = yearsUntilPension > 0 && yearsUntilPension <= 4;
+    }
   }
 
   // 1. PROSES JABATAN PELAKSANA (WAKTU 4 TAHUN)
@@ -349,6 +468,17 @@ export function processEmployeeKP(
         statusLabel = "Belum Waktunya (> 1 Thn)";
         badgeColor = "emerald";
       }
+    }
+
+    // ── Override status jika sudah mencapai batas pangkat pendidikan ──
+    if (atPangkatCeiling && !nearPension) {
+      status = "pangkat_maksimal_pendidikan";
+      statusLabel = `Batas Maks. Pendidikan (${maxPangkatPendidikan})`;
+      badgeColor = "slate";
+    } else if (atPangkatCeiling && nearPension) {
+      status = "satu_tingkat_terakhir";
+      statusLabel = `1 Kenaikan Terakhir (Mendekati Pensiun)`;
+      badgeColor = "amber";
     }
 
     pelaksanaData = {
@@ -443,5 +573,8 @@ export function processEmployeeKP(
     pelaksanaData,
     pointData,
     statusBadge,
+    pangkatMaksimalPendidikan: maxPangkatPendidikan ?? null,
+    isAtPangkatCeiling: atPangkatCeiling,
+    isSatuTingkatTerakhir: atPangkatCeiling && nearPension,
   };
 }

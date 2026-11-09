@@ -1,6 +1,5 @@
-import Sidebar from "../_components/sidebar";
-import Navbar from "../_components/navbar";
 import OutsourcingDirectory from "./outsourcing-directory";
+import PageTransition from "../_components/page-transition";
 
 export const metadata = {
   title: "Data Karyawan Alih Daya | Pusbanglin",
@@ -9,15 +8,10 @@ export const metadata = {
 
 export default function OutsourcingPage() {
   return (
-    <main className="dashboard-shell">
-      <Sidebar activePage="outsourcing" />
-
-      <section className="dashboard-main">
-        <Navbar />
-        <div className="employees-content space-y-5">
-          <OutsourcingDirectory />
-        </div>
-      </section>
-    </main>
+    <PageTransition>
+      <div className="employees-content space-y-5">
+        <OutsourcingDirectory />
+      </div>
+    </PageTransition>
   );
 }

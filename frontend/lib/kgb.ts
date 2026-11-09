@@ -140,6 +140,16 @@ export function addYears(date: Date, years: number): Date {
 }
 
 /**
+ * Format Date ke string YYYY-MM-DD lokal
+ */
+export function formatDateToYMD(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Proses kalkulasi data KGB untuk satu pegawai
  */
 export function processEmployeeKGB(
@@ -289,19 +299,61 @@ export function processEmployeeKGB(
   // 4. Bangun Timeline 16 Langkah (Maksimal 32 Tahun, setiap 2 Tahun)
   const timelineSteps: KGBStep[] = [];
   if (tmtPengangkatan) {
+    // Tentukan target step index berdasarkan kgbSelanjutnya jika ada
+    let targetNextStepNumber: number | null = null;
+    if (kgbSelanjutnya) {
+      for (let i = 1; i <= 16; i++) {
+        const stepDate = addYears(tmtPengangkatan, i * 2);
+        if (
+          stepDate.getFullYear() === kgbSelanjutnya.getFullYear() &&
+          Math.abs(stepDate.getMonth() - kgbSelanjutnya.getMonth()) <= 1
+        ) {
+          targetNextStepNumber = i;
+          break;
+        }
+      }
+      if (!targetNextStepNumber) {
+        for (let i = 1; i <= 16; i++) {
+          const stepDate = addYears(tmtPengangkatan, i * 2);
+          if (stepDate.getFullYear() === kgbSelanjutnya.getFullYear()) {
+            targetNextStepNumber = i;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!targetNextStepNumber && !isMaxMasaKerja) {
+      targetNextStepNumber = Math.min(16, currentStepIndex + 1);
+    }
+
     for (let i = 1; i <= 16; i++) {
       const stepMkg = i * 2;
       const stepDate = addYears(tmtPengangkatan, stepMkg);
 
       let stepStatus: KGBStep["status"] = "future";
-      const isNext = !isMaxMasaKerja && i === currentStepIndex + 1;
+      const isNext = !isMaxMasaKerja && targetNextStepNumber === i;
 
-      if (i <= currentStepIndex) {
-        stepStatus = i === currentStepIndex ? "current" : "completed";
-      } else if (isNext) {
-        stepStatus = "next";
+      if (isMaxMasaKerja) {
+        stepStatus = "completed";
+      } else if (targetNextStepNumber !== null) {
+        if (i < targetNextStepNumber - 1) {
+          stepStatus = "completed";
+        } else if (i === targetNextStepNumber - 1) {
+          stepStatus = "current";
+        } else if (i === targetNextStepNumber) {
+          stepStatus = "next";
+        } else {
+          stepStatus = "future";
+        }
       } else {
-        stepStatus = "future";
+        if (i <= currentStepIndex) {
+          stepStatus = i === currentStepIndex ? "current" : "completed";
+        } else if (isNext) {
+          stepStatus = "next";
+        } else {
+          stepStatus = "future";
+        }
       }
 
       timelineSteps.push({

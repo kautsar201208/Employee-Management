@@ -158,6 +158,8 @@ export default function KPDirectory() {
     let pelaksanaTotal = 0;
     let pelaksanaSudahWaktunya = 0;
     let pelaksanaSegera = 0;
+    let pelaksanaMaksimalPendidikan = 0;
+    let pelaksanaSatuTingkatTerakhir = 0;
 
     let nonPelaksanaTotal = 0;
     let pointTerpenuhi = 0;
@@ -170,6 +172,10 @@ export default function KPDirectory() {
           pelaksanaSudahWaktunya++;
         } else if (r.pelaksanaData?.status === "segera") {
           pelaksanaSegera++;
+        } else if (r.pelaksanaData?.status === "pangkat_maksimal_pendidikan") {
+          pelaksanaMaksimalPendidikan++;
+        } else if (r.pelaksanaData?.status === "satu_tingkat_terakhir") {
+          pelaksanaSatuTingkatTerakhir++;
         }
       } else {
         nonPelaksanaTotal++;
@@ -186,6 +192,8 @@ export default function KPDirectory() {
       pelaksanaTotal,
       pelaksanaSudahWaktunya,
       pelaksanaSegera,
+      pelaksanaMaksimalPendidikan,
+      pelaksanaSatuTingkatTerakhir,
       nonPelaksanaTotal,
       pointTerpenuhi,
       pointKurang,
@@ -206,6 +214,12 @@ export default function KPDirectory() {
           return false;
         }
         if (statusFilter === "segera" && rec.pelaksanaData?.status !== "segera") {
+          return false;
+        }
+        if (statusFilter === "pangkat_maksimal_pendidikan" && rec.pelaksanaData?.status !== "pangkat_maksimal_pendidikan") {
+          return false;
+        }
+        if (statusFilter === "satu_tingkat_terakhir" && rec.pelaksanaData?.status !== "satu_tingkat_terakhir") {
           return false;
         }
         if (statusFilter === "terpenuhi" && rec.pointData?.status !== "terpenuhi") {
@@ -428,6 +442,7 @@ export default function KPDirectory() {
                     <li><strong>Sudah Waktunya</strong>: Masa kerja dalam pangkat sudah mencapai ≥ 4 tahun.</li>
                     <li><strong>Segera</strong>: Sisa waktu kurang dari 6 bulan menuju 4 tahun (berkas harus disiapkan).</li>
                     <li><strong>Periode BKN</strong>: Diusulkan pada 6 periode (Februari, April, Juni, Agustus, Oktober, Desember).</li>
+                    <li><strong>Batas Pendidikan</strong>: SMA (maks. III/b), D3 (maks. III/c), S1 (maks. III/d), S2 (maks. IV/a), S3 (maks. IV/b). Tidak dapat naik pangkat lagi setelah batas maksimal tercapai, kecuali 1 kenaikan terakhir menjelang pensiun.</li>
                   </ul>
                 </div>
 
@@ -633,6 +648,34 @@ export default function KPDirectory() {
 
           <button
             onClick={() => {
+              setStatusFilter("pangkat_maksimal_pendidikan");
+              setCurrentPage(1);
+            }}
+            className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition whitespace-nowrap ${
+              statusFilter === "pangkat_maksimal_pendidikan"
+                ? "bg-slate-700 text-white border-slate-700"
+                : "border-slate-300 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            Batas Maks. Pendidikan ({stats.pelaksanaMaksimalPendidikan})
+          </button>
+
+          <button
+            onClick={() => {
+              setStatusFilter("satu_tingkat_terakhir");
+              setCurrentPage(1);
+            }}
+            className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition whitespace-nowrap ${
+              statusFilter === "satu_tingkat_terakhir"
+                ? "bg-amber-600 text-white border-amber-600"
+                : "border-amber-200 text-amber-700 hover:bg-amber-50"
+            }`}
+          >
+            1 Kenaikan Terakhir ({stats.pelaksanaSatuTingkatTerakhir})
+          </button>
+
+          <button
+            onClick={() => {
               setStatusFilter("terpenuhi");
               setCurrentPage(1);
             }}
@@ -796,16 +839,26 @@ export default function KPDirectory() {
                       <td className="py-2.5 px-3.5 whitespace-nowrap">
                         {rec.isPelaksana && rec.pelaksanaData ? (
                           <div className="space-y-0.5">
-                            <div className="flex items-center justify-between text-[11px] gap-3">
-                              <span className="text-slate-600 font-medium whitespace-nowrap">
-                                KP: {rec.pelaksanaData.kpSelanjutnyaFormatted}
-                              </span>
-                              <span className="font-semibold text-slate-700 whitespace-nowrap">
-                                {rec.pelaksanaData.sisaWaktu?.text}
-                              </span>
-                            </div>
+                            {rec.isAtPangkatCeiling ? (
+                              <div className="flex items-center gap-1.5 text-[11px]">
+                                <span className={rec.isSatuTingkatTerakhir ? "text-amber-700 font-semibold" : "text-slate-500 font-medium"}>
+                                  {rec.isSatuTingkatTerakhir ? "⚠ 1 Kenaikan Terakhir" : "⛔ Batas Pangkat Pendidikan"}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between text-[11px] gap-3">
+                                <span className="text-slate-600 font-medium whitespace-nowrap">
+                                  KP: {rec.pelaksanaData.kpSelanjutnyaFormatted}
+                                </span>
+                                <span className="font-semibold text-slate-700 whitespace-nowrap">
+                                  {rec.pelaksanaData.sisaWaktu?.text}
+                                </span>
+                              </div>
+                            )}
                             <div className="text-[10px] text-slate-500 whitespace-nowrap">
-                              Masa kerja: {rec.pelaksanaData.masaKerjaGolongan?.text || "—"}
+                              {rec.isAtPangkatCeiling
+                                ? `Batas: ${rec.pangkatMaksimalPendidikan} · ${rec.employee.jenjang_pendidikan || "—"}`
+                                : `Masa kerja: ${rec.pelaksanaData.masaKerjaGolongan?.text || "—"}`}
                             </div>
                           </div>
                         ) : rec.pointData ? (
@@ -879,7 +932,8 @@ export default function KPDirectory() {
                             </span>
                           )}
                           {rec.statusBadge.color === "slate" && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200/80 whitespace-nowrap">
+                              <Info size={11} className="text-slate-500" />
                               {rec.statusBadge.label}
                             </span>
                           )}
@@ -1057,8 +1111,35 @@ export default function KPDirectory() {
                       </div>
                     </div>
 
+                    {/* Education Ceiling Notice */}
+                    {selectedRecord.isAtPangkatCeiling && (
+                      <div className={`p-3 rounded-lg flex items-start gap-3 ${
+                        selectedRecord.isSatuTingkatTerakhir
+                          ? "bg-amber-50 border border-amber-200"
+                          : "bg-slate-50 border border-slate-200"
+                      }`}>
+                        <AlertTriangle className={selectedRecord.isSatuTingkatTerakhir ? "text-amber-500 shrink-0 mt-0.5" : "text-slate-400 shrink-0 mt-0.5"} size={18} />
+                        <div className="text-xs space-y-1">
+                          <p className={selectedRecord.isSatuTingkatTerakhir ? "font-bold text-amber-800" : "font-bold text-slate-700"}>
+                            {selectedRecord.isSatuTingkatTerakhir
+                              ? "Satu Kenaikan Pangkat Terakhir (Mendekati Pensiun)"
+                              : "Pangkat Maksimal Berdasarkan Pendidikan"}
+                          </p>
+                          <p className="text-slate-600">
+                            Pegawai dengan pendidikan <strong>{selectedRecord.employee.jenjang_pendidikan || "—"}</strong> memiliki
+                            batas pangkat maksimal <strong>{selectedRecord.pangkatMaksimalPendidikan}</strong>.
+                            {selectedRecord.isSatuTingkatTerakhir
+                              ? " Karena mendekati masa pensiun (sisa ≤ 4 tahun), pegawai ini masih berhak mendapatkan satu kenaikan pangkat terakhir."
+                              : " Kenaikan pangkat reguler tidak dapat diproses hingga pegawai mendekati masa pensiun."}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Status Alert */}
-                    <div className="p-3 rounded-lg bg-white border border-blue-100 flex items-start gap-3">
+                    <div className={`p-3 rounded-lg bg-white flex items-start gap-3 ${
+                      selectedRecord.isAtPangkatCeiling ? "border border-slate-100" : "border border-blue-100"
+                    }`}>
                       {selectedRecord.pelaksanaData?.status === "sudah_waktunya" ? (
                         <>
                           <ShieldAlert className="text-rose-600 shrink-0 mt-0.5" size={20} />
@@ -1082,6 +1163,34 @@ export default function KPDirectory() {
                             <p className="text-slate-600">
                               Tersisa {selectedRecord.pelaksanaData.sisaWaktu?.text}. 
                               Mohon persiapkan berkas SKP 2 tahun terakhir dan kelengkapan administrasi lainnya.
+                            </p>
+                          </div>
+                        </>
+                      ) : selectedRecord.pelaksanaData?.status === "pangkat_maksimal_pendidikan" ? (
+                        <>
+                          <Info className="text-slate-500 shrink-0 mt-0.5" size={20} />
+                          <div className="text-xs space-y-1">
+                            <p className="font-bold text-slate-700">
+                              Kenaikan Pangkat Ditangguhkan
+                            </p>
+                            <p className="text-slate-600">
+                              Pangkat pegawai sudah berada di batas maksimal berdasarkan pendidikan. 
+                              Kenaikan pangkat baru dapat diproses kembali jika pegawai mendekati masa pensiun.
+                            </p>
+                          </div>
+                        </>
+                      ) : selectedRecord.pelaksanaData?.status === "satu_tingkat_terakhir" ? (
+                        <>
+                          <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={20} />
+                          <div className="text-xs space-y-1">
+                            <p className="font-bold text-amber-800">
+                              Satu Kenaikan Pangkat Terakhir
+                            </p>
+                            <p className="text-slate-600">
+                              Meski telah mencapai batas pangkat pendidikan, pegawai ini berhak mendapat <strong>satu kenaikan pangkat terakhir</strong> karena mendekati masa pensiun.
+                              {selectedRecord.pelaksanaData.sisaWaktu && !selectedRecord.pelaksanaData.sisaWaktu.isOverdue
+                                ? ` Proses dalam: ${selectedRecord.pelaksanaData.sisaWaktu.text}.`
+                                : ""}
                             </p>
                           </div>
                         </>

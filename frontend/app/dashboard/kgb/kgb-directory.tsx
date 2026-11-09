@@ -33,10 +33,14 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ACCESS_TOKEN_KEY,
   getEmployees,
+  updateEmployee,
   type ApiEmployee,
+  type EmployeeInput,
 } from "@/lib/api";
 import {
   processEmployeeKGB,
+  formatDateToYMD,
+  addYears,
   type KGBRecord,
   type KGBStep,
 } from "@/lib/kgb";
@@ -106,6 +110,18 @@ export default function KGBDirectory() {
 
   // Modal Detail
   const [selectedRecord, setSelectedRecord] = useState<KGBRecord | null>(null);
+  const [isUpdatingKgb, setIsUpdatingKgb] = useState(false);
+  const [updatingStepNumber, setUpdatingStepNumber] = useState<number | null>(null);
+  const [updateFeedback, setUpdateFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    setUpdateFeedback(null);
+    setIsUpdatingKgb(false);
+    setUpdatingStepNumber(null);
+  }, [selectedRecord?.employee?.id]);
 
   // Aturan KGB Collapsible
   const [showRuleInfo, setShowRuleInfo] = useState(false);
@@ -141,6 +157,103 @@ export default function KGBDirectory() {
   useEffect(() => {
     fetchEmployees();
   }, []);
+
+  const handleSelectTimelineStep = async (step: KGBStep) => {
+    if (!selectedRecord || !step.estimatedDate || isUpdatingKgb) return;
+
+    const emp = selectedRecord.employee;
+    const empId = emp.id;
+    if (!empId) {
+      setUpdateFeedback({
+        type: "error",
+        message: "ID pegawai tidak valid.",
+      });
+      return;
+    }
+
+    const token =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY)
+        : null;
+
+    if (!token) {
+      setUpdateFeedback({
+        type: "error",
+        message: "Sesi login tidak tersedia. Silakan masuk kembali.",
+      });
+      return;
+    }
+
+    const empName = emp.nama_lengkap || emp.nama || "Pegawai";
+    const newKgbDateStr = formatDateToYMD(step.estimatedDate);
+
+    // Cek apakah tanggal target sama persis dengan yang sudah tercatat
+    if (
+      emp.kgb_selanjutnya &&
+      emp.kgb_selanjutnya.slice(0, 10) === newKgbDateStr
+    ) {
+      setUpdateFeedback({
+        type: "success",
+        message: `KGB Ke-${step.stepNumber} (${step.estimatedDateFormatted}) sudah merupakan target KGB Selanjutnya saat ini.`,
+      });
+      return;
+    }
+
+    const confirmMsg = `Perbarui jadwal KGB Selanjutnya untuk ${empName} menjadi KGB Ke-${step.stepNumber} (MKG ${step.mkgYears} Tahun - ${step.estimatedDateFormatted})?\n\nStatus urgensi KGB pada tabel akan otomatis disinkronkan.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsUpdatingKgb(true);
+    setUpdatingStepNumber(step.stepNumber);
+    setUpdateFeedback(null);
+
+    try {
+      // TMT KGB Terakhir diatur ke 2 tahun sebelumnya (siklus sebelumnya) atau TMT pengangkatan
+      const prevStepDate =
+        step.stepNumber > 1
+          ? addYears(step.estimatedDate, -2)
+          : selectedRecord.tmtPengangkatan;
+      const prevKgbDateStr = prevStepDate ? formatDateToYMD(prevStepDate) : undefined;
+
+      const payload: EmployeeInput = {
+        ...emp,
+        nama_lengkap: emp.nama_lengkap || emp.nama || "",
+        nama: emp.nama || emp.nama_lengkap || "",
+        nip: emp.nip || "",
+        kgb_selanjutnya: newKgbDateStr,
+        ...(prevKgbDateStr ? { tmt_kgb_terakhir: prevKgbDateStr } : {}),
+      };
+
+      const updated = await updateEmployee(token, String(empId), payload);
+
+      // 1. Update state employees agar seluruh tabel & metrik otomatis berubah
+      setEmployees((prev) =>
+        prev.map((item) =>
+          String(item.id) === String(updated.id) ? updated : item
+        )
+      );
+
+      // 2. Update selectedRecord agar modal detail langsung sinkron
+      const newRec = processEmployeeKGB(updated);
+      setSelectedRecord(newRec);
+
+      setUpdateFeedback({
+        type: "success",
+        message: `Berhasil! Jadwal KGB Selanjutnya diperbarui ke KGB Ke-${step.stepNumber} (${newRec.kgbSelanjutnyaFormatted}). Status tabel telah disinkronkan.`,
+      });
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Gagal memperbarui data KGB selanjutnya.";
+      setUpdateFeedback({
+        type: "error",
+        message: msg,
+      });
+    } finally {
+      setIsUpdatingKgb(false);
+      setUpdatingStepNumber(null);
+    }
+  };
 
   // Process KGB records
   const kgbRecords = useMemo(() => {
@@ -1386,36 +1499,81 @@ export default function KGBDirectory() {
                       <TrendingUp size={16} className="text-[#2563EB]" />
                       <span>Linimasa 16 Tahapan Siklus KGB (Maksimal 32 Tahun)</span>
                     </h3>
-                    <span className="text-2xs text-slate-500">
+                    <span className="text-2xs text-slate-500 font-medium">
                       Interval 2 Tahun
                     </span>
                   </div>
+
+                  <p className="text-2xs text-slate-500">
+                    💡 <strong>Interaktif:</strong> Klik salah satu kartu tahapan di bawah ini untuk memperbarui jadwal <strong>KGB Selanjutnya</strong> pegawai ini. Status tabel akan otomatis disinkronkan.
+                  </p>
+
+                  {/* FEEDBACK UPDATE BANNER */}
+                  {updateFeedback && (
+                    <div
+                      className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 transition-all ${
+                        updateFeedback.type === "success"
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                          : "bg-rose-50 border-rose-200 text-rose-800"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {updateFeedback.type === "success" ? (
+                          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                        ) : (
+                          <AlertTriangle size={16} className="text-rose-600 shrink-0" />
+                        )}
+                        <span className="font-medium">{updateFeedback.message}</span>
+                      </div>
+                      <button
+                        onClick={() => setUpdateFeedback(null)}
+                        type="button"
+                        className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        aria-label="Tutup notifikasi"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-60 overflow-y-auto pr-1">
                     {selectedRecord.timelineSteps.map((step) => {
                       const isCompleted = step.status === "completed";
                       const isCurrent = step.status === "current";
                       const isNext = step.status === "next";
+                      const isUpdatingThis = updatingStepNumber === step.stepNumber;
 
                       return (
-                        <div
+                        <button
                           key={step.stepNumber}
-                          className={`p-2.5 rounded-xl border text-xs transition-all relative ${
-                            isCurrent
-                              ? "bg-blue-50 border-blue-300 ring-2 ring-blue-500/20 text-blue-900"
-                              : isNext
-                              ? "bg-amber-50 border-amber-300 ring-1 ring-amber-400 text-amber-900"
+                          type="button"
+                          onClick={() => handleSelectTimelineStep(step)}
+                          disabled={isUpdatingKgb}
+                          title={
+                            isNext
+                              ? `KGB Ke-${step.stepNumber} adalah target aktif saat ini (${step.estimatedDateFormatted})`
+                              : `Klik untuk mengatur KGB Ke-${step.stepNumber} (${step.estimatedDateFormatted}) sebagai KGB Selanjutnya`
+                          }
+                          className={`p-2.5 rounded-xl border text-xs text-left transition-all relative group cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed ${
+                            isNext
+                              ? "bg-amber-50 border-amber-300 ring-2 ring-amber-400/50 text-amber-900 shadow-xs"
+                              : isCurrent
+                              ? "bg-blue-50 border-blue-300 ring-2 ring-blue-500/20 text-blue-900 hover:border-blue-400"
                               : isCompleted
-                              ? "bg-emerald-50/50 border-emerald-200 text-emerald-900"
-                              : "bg-slate-50/60 border-slate-200 text-slate-600"
+                              ? "bg-emerald-50/50 border-emerald-200 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-50"
+                              : "bg-slate-50/60 border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-white"
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-bold text-2xs uppercase tracking-wider">
                               KGB Ke-{step.stepNumber}
                             </span>
-                            {isCompleted ? (
-                              <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-3xs">
+                            {isUpdatingThis ? (
+                              <span className="text-3xs flex items-center gap-1 text-blue-700 font-bold">
+                                <RefreshCw size={11} className="animate-spin text-blue-600" />
+                              </span>
+                            ) : isCompleted ? (
+                              <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-3xs" title="Sudah Selesai">
                                 <Check size={10} strokeWidth={3} />
                               </span>
                             ) : isCurrent ? (
@@ -1423,10 +1581,14 @@ export default function KGBDirectory() {
                                 Saat Ini
                               </span>
                             ) : isNext ? (
-                              <span className="px-1.5 py-0.2 rounded text-3xs font-extrabold bg-amber-500 text-white">
+                              <span className="px-1.5 py-0.2 rounded text-3xs font-extrabold bg-amber-500 text-white shadow-2xs">
                                 Target
                               </span>
-                            ) : null}
+                            ) : (
+                              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-3xs text-[#2563EB] font-semibold">
+                                Pilih ➔
+                              </span>
+                            )}
                           </div>
 
                           <div className="font-extrabold text-sm text-slate-900">
@@ -1436,7 +1598,7 @@ export default function KGBDirectory() {
                           <div className="text-3xs text-slate-500 mt-1 truncate">
                             {step.estimatedDateFormatted}
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>

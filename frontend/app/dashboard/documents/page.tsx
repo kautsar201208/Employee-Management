@@ -4,8 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import Sidebar from "../_components/sidebar";
-import Navbar from "../_components/navbar";
+import PageTransition from "../_components/page-transition";
 import {
   ACCESS_TOKEN_KEY,
   getUserDocuments,
@@ -323,12 +322,8 @@ export default function AdminDocumentsPage() {
   }, [documents]);
 
   return (
-    <main className="dashboard-shell">
-      <Sidebar activePage="documents" />
-
-      <section className="dashboard-main">
-        <Navbar />
-
+    <>
+      <PageTransition>
         <div className="employees-content space-y-5">
           {/* HEADER SECTION */}
           <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
@@ -925,7 +920,7 @@ export default function AdminDocumentsPage() {
               </div>
             )}
         </div>
-      </section>
+      </PageTransition>
 
       {/* MODAL PREVIEW DOKUMEN */}
       <AnimatePresence>
@@ -1067,6 +1062,6 @@ export default function AdminDocumentsPage() {
           </div>
         )}
       </AnimatePresence>
-    </main>
+    </>
   );
 }

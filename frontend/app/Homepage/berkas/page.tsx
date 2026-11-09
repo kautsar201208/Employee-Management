@@ -316,7 +316,7 @@ export default function UnggahKelolaBerkasPage() {
       />
 
       {/* 2. MAIN CONTENT AREA */}
-      <div className="flex-1 md:pl-[280px] flex flex-col min-w-0">
+      <div className="flex-1 md:pl-[var(--user-sidebar-w,260px)] transition-all duration-300 flex flex-col min-w-0">
         {/* Top Header */}
         <header className="sticky top-0 z-30 h-[82px] bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">

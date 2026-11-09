@@ -23,6 +23,7 @@ import {
 import { processEmployeeKGB } from "@/lib/kgb";
 import { processEmployeePension } from "@/lib/pension";
 import { useDashboardTheme } from "./dashboard-theme";
+import { useSidebar } from "./sidebar-context";
 
 type DashboardNotification = {
   key: string;
@@ -95,6 +96,7 @@ export default function Navbar() {
     getServerReadNotificationsSnapshot
   );
   const { theme, toggleTheme } = useDashboardTheme();
+  const { isCollapsed, toggleSidebar } = useSidebar();
   const [employees, setEmployees] = useState<ApiEmployee[]>([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
   const [notificationError, setNotificationError] = useState("");

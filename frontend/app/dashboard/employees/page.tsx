@@ -1,6 +1,5 @@
-import Sidebar from "../_components/sidebar";
-import Navbar from "../_components/navbar";
 import EmployeeDirectory from "./employee-directory";
+import PageTransition from "../_components/page-transition";
 
 export const metadata = {
   title: "Data Karyawan | Pusbanglin",
@@ -9,14 +8,10 @@ export const metadata = {
 
 export default function EmployeesPage() {
   return (
-    <main className="dashboard-shell">
-      <Sidebar activePage="employees" />
-      <section className="dashboard-main">
-        <Navbar />
-        <div className="employees-content space-y-5">
-          <EmployeeDirectory />
-        </div>
-      </section>
-    </main>
+    <PageTransition>
+      <div className="employees-content space-y-5">
+        <EmployeeDirectory />
+      </div>
+    </PageTransition>
   );
 }
