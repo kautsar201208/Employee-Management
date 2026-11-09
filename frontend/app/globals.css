@@ -4204,13 +4204,32 @@ input {
   color: #7da9ff !important;
 }
 
-/* Pastikan icon pada menu tidak aktif bebas dari kotak/background hitam */
+/* Pastikan seluruh link menu tidak aktif di sidebar TIDAK memiliki background kotak hitam */
+.sidebar a:not([aria-current="page"]),
+.admin-theme[data-theme="dark"] .sidebar a:not([aria-current="page"]),
 .sidebar a:not([aria-current="page"]) span,
 .admin-theme[data-theme="dark"] .sidebar a:not([aria-current="page"]) span {
   background: transparent !important;
   background-color: transparent !important;
   box-shadow: none !important;
   border: none !important;
+}
+
+/* Hover state pada link menu tidak aktif */
+.sidebar a:not([aria-current="page"]):hover,
+.admin-theme[data-theme="dark"] .sidebar a:not([aria-current="page"]):hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Footer card dan tombol panah di sidebar */
+.admin-theme[data-theme="dark"] .sidebar [class*="bg-white/10"] {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-theme[data-theme="dark"] .sidebar button.bg-white,
+.admin-theme[data-theme="dark"] .sidebar button .bg-white {
+  background-color: #ffffff !important;
 }
 
 /* Navbar di mode gelap: warna hitam sedikit lebih terang seperti card (#1c2738) */
@@ -4478,4 +4497,23 @@ input {
 
 .table-scroll-container::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+}
+
+/* =========================================================================
+   PROTEKSI SIDEBAR: Pastikan link menu tidak aktif tidak memiliki background kotak hitam
+   ========================================================================= */
+.admin-theme[data-theme="dark"] .sidebar a:not([aria-current="page"]) {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.admin-theme[data-theme="dark"] .sidebar a:not([aria-current="page"]):hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.admin-theme[data-theme="dark"] .sidebar a:not([aria-current="page"]) * {
+  background-color: transparent !important;
 }
