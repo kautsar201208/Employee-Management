@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
+import { SkeletonBreakdownItem, SkeletonStatCard } from "./skeleton";
 import {
   Users,
   Award,
@@ -362,6 +363,14 @@ export default function DashboardData() {
       )}
 
       {/* 2. TOP METRIC STATS */}
+      {isLoading ? (
+        <section className="home-stats" aria-label="Ringkasan karyawan">
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+        </section>
+      ) : (
       <motion.section
         className="home-stats"
         aria-label="Ringkasan karyawan"
@@ -577,6 +586,7 @@ export default function DashboardData() {
           </div>
         </motion.article>
       </motion.section>
+      )}
 
       {/* 3. DYNAMIC DEMOGRAPHIC & STATISTICAL BREAKDOWN */}
       <motion.section
@@ -611,12 +621,25 @@ export default function DashboardData() {
                   role="tab"
                   aria-selected={isActive}
                   className={`stat-tab-pill${isActive ? " active" : ""}`}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: "#2563eb",
+                          color: "#ffffff",
+                          borderColor: "#3b82f6",
+                          boxShadow: "0 2px 10px rgba(37, 99, 235, 0.45)",
+                        }
+                      : undefined
+                  }
                   onClick={() => {
                     setActiveCategory(cat.key);
                     setSearchQuery("");
                   }}
                 >
-                  {isActive && <Icon size={13} />}
+                  <Icon
+                    size={13}
+                    className={isActive ? "text-white" : "opacity-75"}
+                  />
                   <span>{cat.label}</span>
                 </button>
               );
@@ -681,15 +704,10 @@ export default function DashboardData() {
               </div>
             )}
             {isLoading && (
-              <div
-                style={{
-                  padding: "24px 0",
-                  textAlign: "center",
-                  fontSize: "12px",
-                  color: "var(--muted)",
-                }}
-              >
-                Memuat data statistik...
+              <div className="space-y-2 px-1 py-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonBreakdownItem key={i} />
+                ))}
               </div>
             )}
           </div>

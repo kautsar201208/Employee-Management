@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { Skeleton } from "../_components/skeleton";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -564,14 +565,24 @@ export default function AdminDocumentsPage() {
 
           {/* MAIN CONTENT AREA */}
           {isLoading && (
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center">
-              <div className="w-10 h-10 border-3 border-slate-200 border-t-[#2563EB] rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-sm font-semibold text-slate-700">
-                Mengambil daftar berkas pegawai...
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Menyiapkan pratinjau dokumen dari penyimpanan cloud
-              </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white dark:bg-[#1c2738] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 p-5 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3.5 w-36" />
+                      <Skeleton className="h-2.5 w-24" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-2.5 w-full" />
+                  <Skeleton className="h-2.5 w-4/5" />
+                  <div className="flex justify-between items-center pt-1">
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                    <Skeleton className="h-6 w-16 rounded-lg" />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

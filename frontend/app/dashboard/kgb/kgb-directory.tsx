@@ -30,6 +30,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Skeleton, SkeletonTableRow } from "../_components/skeleton";
 import {
   ACCESS_TOKEN_KEY,
   getEmployees,
@@ -620,7 +621,7 @@ export default function KGBDirectory() {
                 statusFilter === "all" ? "text-white" : "text-[#0F172A]"
               }`}
             >
-              {isLoading ? "—" : metrics.total}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.total}
             </div>
             <p
               className={`text-[11px] mt-0.5 ${
@@ -669,7 +670,7 @@ export default function KGBDirectory() {
                 statusFilter === "lewat_tempo" ? "text-white" : "text-[#0F172A]"
               }`}
             >
-              {isLoading ? "—" : metrics.lewatTempoCount}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.lewatTempoCount}
             </div>
             <p
               className={`text-[11px] mt-0.5 ${
@@ -718,7 +719,7 @@ export default function KGBDirectory() {
                 statusFilter === "segera" ? "text-white" : "text-[#0F172A]"
               }`}
             >
-              {isLoading ? "—" : metrics.segeraCount}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.segeraCount}
             </div>
             <p
               className={`text-[11px] mt-0.5 ${
@@ -767,7 +768,7 @@ export default function KGBDirectory() {
                 statusFilter === "tahun_berjalan" ? "text-white" : "text-[#0F172A]"
               }`}
             >
-              {isLoading ? "—" : metrics.tahunBerjalanCount}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.tahunBerjalanCount}
             </div>
             <p
               className={`text-[11px] mt-0.5 ${
@@ -816,7 +817,7 @@ export default function KGBDirectory() {
                 statusFilter === "maksimal" ? "text-white" : "text-[#0F172A]"
               }`}
             >
-              {isLoading ? "—" : metrics.maksimalCount}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.maksimalCount}
             </div>
             <p
               className={`text-[11px] mt-0.5 ${
@@ -1018,43 +1019,7 @@ export default function KGBDirectory() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <div className="w-4 h-4 bg-slate-200 rounded mx-auto" />
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-slate-200 rounded-full shrink-0" />
-                        <div className="space-y-1 flex-1">
-                          <div className="w-32 h-3 bg-slate-200 rounded" />
-                          <div className="w-24 h-2 bg-slate-100 rounded" />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="w-28 h-3 bg-slate-200 rounded mb-1" />
-                      <div className="w-20 h-2 bg-slate-100 rounded" />
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="w-24 h-3 bg-slate-200 rounded" />
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="w-28 h-3 bg-slate-200 rounded mb-1" />
-                      <div className="w-full h-1.5 bg-slate-100 rounded" />
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="w-20 h-3 bg-slate-200 rounded" />
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="w-24 h-3 bg-slate-200 rounded" />
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="w-20 h-5 bg-slate-200 rounded-full" />
-                    </td>
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <div className="w-14 h-6 bg-slate-200 rounded-lg mx-auto" />
-                    </td>
-                  </tr>
+                  <SkeletonTableRow key={i} cols={9} hasAvatar />
                 ))
               ) : visibleRecords.length === 0 ? (
                 <tr>

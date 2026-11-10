@@ -26,6 +26,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Skeleton, SkeletonTableRow } from "../_components/skeleton";
 import {
   ACCESS_TOKEN_KEY,
   getEmployees,
@@ -468,7 +469,7 @@ export default function PensionDirectory() {
           </div>
           <div className="mt-2">
             <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
-              {isLoading ? "—" : metrics.total}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.total}
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5">Pegawai terpantau</p>
           </div>
@@ -489,7 +490,7 @@ export default function PensionDirectory() {
           </div>
           <div className="mt-2">
             <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
-              {isLoading ? "—" : metrics.bup58Count}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.bup58Count}
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5">Pertama, Muda, Pelaksana</p>
           </div>
@@ -510,7 +511,7 @@ export default function PensionDirectory() {
           </div>
           <div className="mt-2">
             <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
-              {isLoading ? "—" : metrics.bup60Count}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.bup60Count}
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5">Madya, Utama, Pimpinan</p>
           </div>
@@ -531,7 +532,7 @@ export default function PensionDirectory() {
           </div>
           <div className="mt-2">
             <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
-              {isLoading ? "—" : metrics.kritisCount}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.kritisCount}
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5">Perlu tindak lanjut HR</p>
           </div>
@@ -552,7 +553,7 @@ export default function PensionDirectory() {
           </div>
           <div className="mt-2">
             <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
-              {isLoading ? "—" : metrics.waspadaCount}
+              {isLoading ? <Skeleton className="h-7 w-12" /> : metrics.waspadaCount}
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5">Persiapan purnabakti</p>
           </div>
@@ -689,12 +690,9 @@ export default function PensionDirectory() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
-                    <RefreshCw size={22} className="animate-spin mx-auto text-[#2563EB] mb-2" />
-                    <p className="font-medium">Memuat dan menghitung data pensiun pegawai...</p>
-                  </td>
-                </tr>
+                Array.from({ length: 8 }).map((_, i) => (
+                  <SkeletonTableRow key={i} cols={9} hasAvatar />
+                ))
               ) : visibleRecords.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-slate-400">

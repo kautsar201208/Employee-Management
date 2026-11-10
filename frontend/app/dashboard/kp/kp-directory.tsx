@@ -31,6 +31,7 @@ import {
   Save,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { SkeletonTableRow } from "../_components/skeleton";
 import {
   ACCESS_TOKEN_KEY,
   getEmployees,
@@ -735,14 +736,9 @@ export default function KPDirectory() {
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="py-16 text-center text-slate-500">
-                    <div className="inline-flex items-center gap-2 text-sm">
-                      <RefreshCw className="animate-spin text-blue-600" size={18} />
-                      <span>Memuat data monitoring kenaikan pangkat...</span>
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonTableRow key={i} cols={7} hasAvatar />
+                ))
               ) : error ? (
                 <tr>
                   <td colSpan={7} className="py-16 text-center text-rose-500">

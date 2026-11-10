@@ -22,6 +22,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Skeleton, SkeletonTableRow } from "../_components/skeleton";
 import {
   ACCESS_TOKEN_KEY,
   createOutsourcingEmployee,
@@ -124,14 +125,18 @@ export default function OutsourcingDirectory() {
     setIsLoading(true);
     setError("");
 
-    getOutsourcingEmployees(token)
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
+    const req = getOutsourcingEmployees(token)
       .then(setEmployees)
       .catch((err: unknown) => {
         setError(
           err instanceof Error ? err.message : "Gagal mengambil data pegawai alih daya."
         );
-      })
-      .finally(() => setIsLoading(false));
+      });
+
+    Promise.allSettled([req, minDelay]).then(() => {
+      setIsLoading(false);
+    });
   };
 
   useEffect(() => {
@@ -376,12 +381,48 @@ export default function OutsourcingDirectory() {
             <User size={20} strokeWidth={2.2} />
           </span>
           <div>
-            <p className="stat-value">{employees.length}</p>
+            <p className="stat-value">
+              {isLoading ? (
+                <Skeleton className="h-6 w-12 my-0.5 inline-block" />
+              ) : (
+                employees.length
+              )}
+            </p>
             <p className="stat-label">Total Karyawan</p>
           </div>
         </button>
 
-        {statsByJabatan.map(([jabatanName, count]) => {
+        {isLoading ? (
+          <>
+            <div className="stat-card opacity-70">
+              <span className="stat-icon">
+                <Skeleton className="h-5 w-5 rounded-full" />
+              </span>
+              <div className="space-y-1">
+                <Skeleton className="h-5 w-8" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+            <div className="stat-card opacity-70">
+              <span className="stat-icon">
+                <Skeleton className="h-5 w-5 rounded-full" />
+              </span>
+              <div className="space-y-1">
+                <Skeleton className="h-5 w-8" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+            <div className="stat-card opacity-70">
+              <span className="stat-icon">
+                <Skeleton className="h-5 w-5 rounded-full" />
+              </span>
+              <div className="space-y-1">
+                <Skeleton className="h-5 w-8" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          </>
+        ) : statsByJabatan.map(([jabatanName, count]) => {
           const Icon = getJabatanIcon(jabatanName);
           const isActive = jabatanFilter === jabatanName;
           return (
@@ -461,43 +502,55 @@ export default function OutsourcingDirectory() {
             </button>
           )}
         </div>
-        {isLoading ? (
-          <div className="table-loading">
-            <div className="table-loading-spinner" aria-hidden="true" />
-            <p>Memuat data pegawai alih daya…</p>
-          </div>
-        ) : error ? (
-          <div className="table-empty">
-            <Building2 size={40} className="table-empty-icon" aria-hidden="true" />
-            <p className="table-empty-title">Gagal memuat data</p>
-            <p className="table-empty-desc">{error}</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="table-empty">
-            <UserCheck size={40} className="table-empty-icon" aria-hidden="true" />
-            <p className="table-empty-title">Tidak ada data ditemukan</p>
-            <p className="table-empty-desc">
-              {query || jabatanFilter !== "all"
-                ? "Coba ubah filter pencarian."
-                : "Belum ada pegawai alih daya yang tercatat."}
-            </p>
-          </div>
-        ) : (
-          <div className="table-wrapper" role="region" aria-label="Tabel pegawai alih daya">
-            <table className="employee-table" aria-label="Daftar pegawai alih daya">
-              <thead>
+        <div className="table-wrapper" role="region" aria-label="Tabel pegawai alih daya">
+          <table className="employee-table" aria-label="Daftar pegawai alih daya">
+            <thead>
+              <tr>
+                <th scope="col" style={{ width: "60px", textAlign: "center" }}>No</th>
+                <th scope="col">Nama Lengkap</th>
+                <th scope="col">Jabatan</th>
+                <th scope="col">Satuan Kerja</th>
+                <th scope="col" style={{ textAlign: "right", width: "90px" }}>
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading && (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonTableRow key={i} cols={5} hasAvatar avatarCol={1} />
+                ))
+              )}
+
+              {!isLoading && error && (
                 <tr>
-                  <th scope="col">No</th>
-                  <th scope="col">Nama Lengkap</th>
-                  <th scope="col">Jabatan</th>
-                  <th scope="col">Satuan Kerja</th>
-                  <th scope="col" style={{ textAlign: "right" }}>
-                    Aksi
-                  </th>
+                  <td colSpan={5} className="py-12 text-center">
+                    <div className="table-empty">
+                      <Building2 size={40} className="table-empty-icon" aria-hidden="true" />
+                      <p className="table-empty-title">Gagal memuat data</p>
+                      <p className="table-empty-desc">{error}</p>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {visible.map((employee, idx) => (
+              )}
+
+              {!isLoading && !error && filtered.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <div className="table-empty">
+                      <UserCheck size={40} className="table-empty-icon" aria-hidden="true" />
+                      <p className="table-empty-title">Tidak ada data ditemukan</p>
+                      <p className="table-empty-desc">
+                        {query || jabatanFilter !== "all"
+                          ? "Coba ubah filter pencarian."
+                          : "Belum ada pegawai alih daya yang tercatat."}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {!isLoading && !error && visible.map((employee, idx) => (
                   <motion.tr
                     key={employee.id}
                     custom={idx}
@@ -547,9 +600,8 @@ export default function OutsourcingDirectory() {
                   </motion.tr>
                 ))}
               </tbody>
-            </table>
-          </div>
-        )}
+          </table>
+        </div>
 
         {/* Pagination */}
         {!isLoading && !error && totalPages > 1 && (

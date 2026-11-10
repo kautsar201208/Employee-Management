@@ -14,6 +14,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Skeleton, SkeletonTableRow } from "../_components/skeleton";
 import {
   ACCESS_TOKEN_KEY,
   createEmployee as createEmployeeRequest,
@@ -1043,7 +1044,7 @@ export default function EmployeeDirectory() {
             <div>
               <span>{stat.label}</span>
               <strong>
-                {isLoading ? "—" : stat.value}
+                {isLoading ? <Skeleton className="h-6 w-12 inline-block my-0.5" /> : stat.value}
               </strong>
             </div>
 
@@ -1372,15 +1373,9 @@ export default function EmployeeDirectory() {
                 )}
 
               {isLoading && (
-                <tr>
-                  <td
-                    className="employees-empty"
-                    colSpan={8}
-                  >
-                    Mengambil data karyawan dari
-                    backend...
-                  </td>
-                </tr>
+                Array.from({ length: 8 }).map((_, i) => (
+                  <SkeletonTableRow key={i} cols={8} hasAvatar avatarCol={0} />
+                ))
               )}
 
               {error && (

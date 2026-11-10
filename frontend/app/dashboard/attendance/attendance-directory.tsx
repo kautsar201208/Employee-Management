@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Skeleton, SkeletonTableRow } from "../_components/skeleton";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -153,6 +154,8 @@ export default function AttendanceDirectory() {
   useEffect(() => {
     const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
     const controller = new AbortController();
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
+
     const loadData = accessToken
       ? Promise.all([
           getAttendanceSummaries(accessToken, controller.signal),
@@ -172,8 +175,11 @@ export default function AttendanceDirectory() {
             ? loadError.message
             : "Gagal mengambil rekap kehadiran.",
         );
-      })
-      .finally(() => setIsLoading(false));
+      });
+
+    Promise.allSettled([loadData, minDelay]).then(() => {
+      setIsLoading(false);
+    });
 
     return () => controller.abort();
   }, []);
@@ -358,8 +364,9 @@ export default function AttendanceDirectory() {
           <button
             onClick={async () => {
               setIsLoading(true);
+              const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
               try {
-                await refreshSummaries();
+                await Promise.allSettled([refreshSummaries(), minDelay]);
               } finally {
                 setIsLoading(false);
               }
@@ -391,21 +398,39 @@ export default function AttendanceDirectory() {
         <article className="employees-summary-card">
           <div>
             <span>Total Alpha</span>
-            <strong>{integerFormatter.format(totals.alpha)}</strong>
+            <strong>
+              {isLoading ? (
+                <Skeleton className="h-6 w-14 inline-block my-0.5" />
+              ) : (
+                integerFormatter.format(totals.alpha)
+              )}
+            </strong>
             <small>hari</small>
           </div>
         </article>
         <article className="employees-summary-card">
           <div>
             <span>Lupa Absen</span>
-            <strong>{formatDays(forgotAttendanceDays)}</strong>
+            <strong>
+              {isLoading ? (
+                <Skeleton className="h-6 w-14 inline-block my-0.5" />
+              ) : (
+                formatDays(forgotAttendanceDays)
+              )}
+            </strong>
             <small>hari ekuivalen</small>
           </div>
         </article>
         <article className="employees-summary-card">
           <div>
             <span>Total Ekuivalen Alpha</span>
-            <strong>{formatDays(totalAlphaEquivalentDays)}</strong>
+            <strong>
+              {isLoading ? (
+                <Skeleton className="h-6 w-14 inline-block my-0.5" />
+              ) : (
+                formatDays(totalAlphaEquivalentDays)
+              )}
+            </strong>
             <small>Alpha + lupa absen</small>
           </div>
         </article>
@@ -413,7 +438,11 @@ export default function AttendanceDirectory() {
           <div>
             <span>Terlambat / Pulang Awal</span>
             <strong>
-              {integerFormatter.format(totals.late + totals.early)}
+              {isLoading ? (
+                <Skeleton className="h-6 w-14 inline-block my-0.5" />
+              ) : (
+                integerFormatter.format(totals.late + totals.early)
+              )}
             </strong>
             <small>menit</small>
           </div>
@@ -449,7 +478,11 @@ export default function AttendanceDirectory() {
         </div>
         <div className="attendance-toolbar-actions">
           <span className="attendance-row-count">
-            {integerFormatter.format(filteredRows.length)} pegawai
+            {isLoading ? (
+              <Skeleton className="h-4 w-16 inline-block" />
+            ) : (
+              `${integerFormatter.format(filteredRows.length)} pegawai`
+            )}
           </span>
           <button
             className="primary-button attendance-add-button"
@@ -481,13 +514,13 @@ export default function AttendanceDirectory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {isLoading ? (
-                <tr>
-                  <td className="py-12 text-center text-slate-400" colSpan={10}>
-                    <p className="font-medium text-xs">Memuat rekap kehadiran...</p>
-                  </td>
-                </tr>
-              ) : filteredRows.length === 0 ? (
+              {isLoading && (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonTableRow key={i} cols={10} hasAvatar avatarCol={1} />
+                ))
+              )}
+
+              {!isLoading && filteredRows.length === 0 && (
                 <tr>
                   <td className="py-12 text-center text-slate-400" colSpan={10}>
                     <p className="font-semibold text-slate-600 text-xs">
@@ -497,8 +530,9 @@ export default function AttendanceDirectory() {
                     </p>
                   </td>
                 </tr>
-              ) : (
-                visibleRows.map((row, index) => {
+              )}
+
+              {!isLoading && visibleRows.map((row, index) => {
                   const emp = row.employee || employeeMap.get(String(row.employee_id));
                   const empName = emp?.nama_lengkap || emp?.nama || getEmployeeName(row);
                   const empNip = emp?.nip || "NIP tidak tersedia";
@@ -648,8 +682,7 @@ export default function AttendanceDirectory() {
                       </td>
                     </tr>
                   );
-                })
-              )}
+                })}
             </tbody>
           </table>
         </div>

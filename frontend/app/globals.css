@@ -3187,6 +3187,40 @@ input {
   }
 }
 
+/* ── Skeleton Shimmer Animation ───────────────────────────── */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 0%,
+    #f8fafc 40%,
+    #e2e8f0 80%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+[data-theme="dark"] .skeleton-shimmer,
+.dark .skeleton-shimmer,
+.admin-theme[data-theme="dark"] .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #1e293b 0%,
+    #334155 40%,
+    #1e293b 80%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite !important;
+}
+
 /* ── Empty State ────────────────────────────────────── */
 .table-empty {
   display: flex;
@@ -4362,6 +4396,20 @@ input {
   border-color: var(--line);
   background-color: #202e42;
   color: var(--ink);
+}
+
+.admin-theme[data-theme="dark"] .stat-tab-pill:hover:not(.active) {
+  background-color: #283952;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+.admin-theme[data-theme="dark"] .stat-tab-pill.active {
+  background-color: #2563eb !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.45) !important;
 }
 
 .admin-theme[data-theme="dark"] .employees-search,
