@@ -31,7 +31,7 @@ import {
   Save,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { SkeletonTableRow } from "../_components/skeleton";
+import { Skeleton, SkeletonTableRow } from "../_components/skeleton";
 import {
   ACCESS_TOKEN_KEY,
   getEmployees,
@@ -133,10 +133,13 @@ export default function KPDirectory() {
       return;
     }
 
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
     try {
       const data = await getEmployees(token);
+      await minDelay;
       setEmployees(data || []);
     } catch (err: unknown) {
+      await minDelay;
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat memuat data";
       setError(msg);
     } finally {
@@ -478,7 +481,7 @@ export default function KPDirectory() {
               <Users size={15} />
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900">{stats.total}</div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900">{isLoading ? <Skeleton className="h-7 w-12 my-0.5 inline-block" /> : stats.total}</div>
           <p className="text-[11px] text-slate-500 truncate">
             <span className="font-semibold text-slate-700">{stats.pelaksanaTotal}</span> Pelaksana &bull;{" "}
             <span className="font-semibold text-slate-700">{stats.nonPelaksanaTotal}</span> Non-Pelaksana
@@ -493,7 +496,7 @@ export default function KPDirectory() {
               <ShieldAlert size={15} />
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900">{stats.pelaksanaSudahWaktunya}</div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900">{isLoading ? <Skeleton className="h-7 w-12 my-0.5 inline-block" /> : stats.pelaksanaSudahWaktunya}</div>
           <p className="text-[11px] text-slate-500 flex items-center truncate">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5 shrink-0" />
             Masa kerja ≥ 4 thn (Siap proses)
@@ -508,7 +511,7 @@ export default function KPDirectory() {
               <Clock size={15} />
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900">{stats.pelaksanaSegera}</div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900">{isLoading ? <Skeleton className="h-7 w-12 my-0.5 inline-block" /> : stats.pelaksanaSegera}</div>
           <p className="text-[11px] text-slate-500 flex items-center truncate">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 shrink-0" />
             Jatuh tempo &lt; 6 bln ke depan
@@ -523,7 +526,7 @@ export default function KPDirectory() {
               <Award size={15} />
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900">{stats.pointTerpenuhi}</div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900">{isLoading ? <Skeleton className="h-7 w-12 my-0.5 inline-block" /> : stats.pointTerpenuhi}</div>
           <p className="text-[11px] text-slate-500 flex items-center truncate">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 shrink-0" />
             Point cukup (Siap KP) &bull; {stats.pointKurang} Belum Cukup
@@ -734,7 +737,7 @@ export default function KPDirectory() {
                 <th className="py-3 px-3 w-24 text-center whitespace-nowrap bg-slate-50">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="text-slate-700">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <SkeletonTableRow key={i} cols={7} hasAvatar />

@@ -152,7 +152,7 @@ export default function AttendanceDirectory() {
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
   useEffect(() => {
-    const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    const accessToken = typeof window !== "undefined" ? sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY) : null;
     const controller = new AbortController();
     const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
 
@@ -197,14 +197,26 @@ export default function AttendanceDirectory() {
   );
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("id-ID");
-    if (!normalizedQuery) return yearRows;
+    const matched = !normalizedQuery
+      ? yearRows
+      : yearRows.filter((row) => {
+          const emp = row.employee || employeeMap.get(String(row.employee_id));
+          const name = emp?.nama_lengkap || emp?.nama || getEmployeeName(row);
+          const nip = emp?.nip || row.employee?.nip;
+          const jabatan = emp?.jabatan || row.employee?.jabatan;
+          return [name, nip, jabatan]
+            .filter(Boolean)
+            .some((value) => value!.toLocaleLowerCase("id-ID").includes(normalizedQuery));
+        });
 
-    return yearRows.filter((row) =>
-      [getEmployeeName(row), row.employee?.nip, row.employee?.jabatan]
-        .filter(Boolean)
-        .some((value) => value!.toLocaleLowerCase("id-ID").includes(normalizedQuery)),
-    );
-  }, [query, yearRows]);
+    return [...matched].sort((a, b) => {
+      const empA = a.employee || employeeMap.get(String(a.employee_id));
+      const nameA = (empA?.nama_lengkap || empA?.nama || getEmployeeName(a)).trim();
+      const empB = b.employee || employeeMap.get(String(b.employee_id));
+      const nameB = (empB?.nama_lengkap || empB?.nama || getEmployeeName(b)).trim();
+      return nameA.localeCompare(nameB, "id-ID", { sensitivity: "base" });
+    });
+  }, [query, yearRows, employeeMap]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -256,14 +268,14 @@ export default function AttendanceDirectory() {
   }
 
   async function refreshSummaries() {
-    const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    const accessToken = typeof window !== "undefined" ? sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY) : null;
     if (!accessToken) throw new Error("Sesi login tidak tersedia. Silakan masuk kembali.");
     setSummaries(await getAttendanceSummaries(accessToken));
   }
 
   async function saveSummary(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    const accessToken = typeof window !== "undefined" ? sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY) : null;
     if (!accessToken) {
       setFeedback("Sesi login tidak tersedia. Silakan masuk kembali.");
       return;
@@ -312,7 +324,7 @@ export default function AttendanceDirectory() {
     if (!window.confirm(`Hapus rekap ${getEmployeeName(summary)} tahun ${summary.attendance_year}?`)) {
       return;
     }
-    const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    const accessToken = typeof window !== "undefined" ? sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY) : null;
     if (!accessToken) {
       setError("Sesi login tidak tersedia. Silakan masuk kembali.");
       return;
@@ -513,7 +525,7 @@ export default function AttendanceDirectory() {
                 <th className="py-3 px-4 w-28 text-center whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody >
               {isLoading && (
                 Array.from({ length: 6 }).map((_, i) => (
                   <SkeletonTableRow key={i} cols={10} hasAvatar avatarCol={1} />

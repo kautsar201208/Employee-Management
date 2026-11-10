@@ -381,14 +381,14 @@ export default function OutsourcingDirectory() {
             <User size={20} strokeWidth={2.2} />
           </span>
           <div>
-            <p className="stat-value">
+            <div className="stat-value">
               {isLoading ? (
                 <Skeleton className="h-6 w-12 my-0.5 inline-block" />
               ) : (
                 employees.length
               )}
-            </p>
-            <p className="stat-label">Total Karyawan</p>
+            </div>
+            <div className="stat-label">Total Karyawan</div>
           </div>
         </button>
 
@@ -440,8 +440,8 @@ export default function OutsourcingDirectory() {
                 <Icon size={20} strokeWidth={2} />
               </span>
               <div>
-                <p className="stat-value">{count}</p>
-                <p className="stat-label">{jabatanName}</p>
+                <div className="stat-value">{count}</div>
+                <div className="stat-label">{jabatanName}</div>
               </div>
             </button>
           );

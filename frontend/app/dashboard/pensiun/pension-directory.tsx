@@ -105,7 +105,10 @@ export default function PensionDirectory() {
   const [showRuleInfo, setShowRuleInfo] = useState(false);
 
   const fetchEmployees = () => {
-    const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    const accessToken =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY)
+        : null;
 
     if (!accessToken) {
       setError("Silakan masuk untuk melihat data pensiun pegawai.");
@@ -116,7 +119,8 @@ export default function PensionDirectory() {
     setIsLoading(true);
     setError("");
 
-    getEmployees(accessToken)
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
+    const req = getEmployees(accessToken)
       .then((data) => {
         setEmployees(data);
       })
@@ -133,8 +137,9 @@ export default function PensionDirectory() {
             ? fetchError.message
             : "Gagal mengambil data pegawai."
         );
-      })
-      .finally(() => setIsLoading(false));
+      });
+
+    Promise.allSettled([req, minDelay]).then(() => setIsLoading(false));
   };
 
   useEffect(() => {
@@ -688,7 +693,7 @@ export default function PensionDirectory() {
                 <th className="py-3.5 px-4 w-20 text-center whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody >
               {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <SkeletonTableRow key={i} cols={9} hasAvatar />

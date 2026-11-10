@@ -141,10 +141,13 @@ export default function KGBDirectory() {
       return;
     }
 
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
     try {
       const data = await getEmployees(token);
+      await minDelay;
       setEmployees(data || []);
     } catch (err: unknown) {
+      await minDelay;
       const message =
         err instanceof Error
           ? err.message
@@ -1016,7 +1019,7 @@ export default function KGBDirectory() {
                 <th className="py-3 px-4 text-center w-28 whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody >
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <SkeletonTableRow key={i} cols={9} hasAvatar />
