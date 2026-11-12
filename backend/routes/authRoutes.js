@@ -1,6 +1,7 @@
 const express = require("express");
 
 const {
+    checkNip,
     register,
     login,
     forgotPassword,
@@ -13,6 +14,7 @@ const authenticate = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+router.get("/check-nip/:nip", checkNip);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/forgot-password", forgotPassword);

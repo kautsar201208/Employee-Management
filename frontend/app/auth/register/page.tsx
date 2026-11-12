@@ -3,9 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
-import { Eye, EyeOff } from "lucide-react";
-import { registerWithBackend } from "@/lib/api";
+import { useState, useEffect, type FormEvent } from "react";
+import { Eye, EyeOff, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { registerWithBackend, checkNipFromBackend } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -21,9 +21,70 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Status pengecekan NIP
+  const [isCheckingNip, setIsCheckingNip] = useState(false);
+  const [nipStatus, setNipStatus] = useState<"idle" | "found" | "notFound">("idle");
+  const [nipMessage, setNipMessage] = useState("");
+
+  // Pengecekan otomatis saat user mengetik NIP (Debounce)
+  useEffect(() => {
+    const trimmedNip = nip.trim();
+
+    if (!trimmedNip) {
+      setNama("");
+      setNipStatus("idle");
+      setNipMessage("");
+      setIsCheckingNip(false);
+      return;
+    }
+
+    if (trimmedNip.length < 5) {
+      setNama("");
+      setNipStatus("idle");
+      setNipMessage("");
+      setIsCheckingNip(false);
+      return;
+    }
+
+    setIsCheckingNip(true);
+    setNipMessage("Memeriksa data NIP...");
+
+    const timer = setTimeout(async () => {
+      try {
+        const emp = await checkNipFromBackend(trimmedNip);
+        setNama(emp.nama);
+        setNipStatus("found");
+        setNipMessage(`Pegawai ditemukan: ${emp.nama}`);
+      } catch (err) {
+        setNama("");
+        setNipStatus("notFound");
+        setNipMessage(err instanceof Error ? err.message : "NIP tidak ditemukan dalam data pegawai.");
+      } finally {
+        setIsCheckingNip(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [nip]);
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+
+    if (!nip.trim()) {
+      setError("Silakan masukkan NIP Anda terlebih dahulu.");
+      return;
+    }
+
+    if (nipStatus !== "found" || !nama) {
+      setError("NIP tidak valid atau belum ditemukan dalam data pegawai.");
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("Silakan masukkan email perusahaan Anda.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Konfirmasi kata sandi tidak cocok.");
@@ -36,7 +97,7 @@ export default function RegisterPage() {
 
     setIsSubmitting(true);
     try {
-      await registerWithBackend({ nip, nama, email, password });
+      await registerWithBackend({ nip: nip.trim(), nama, email: email.trim(), password });
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan. Coba lagi.");
@@ -68,7 +129,7 @@ export default function RegisterPage() {
 
           {success ? (
             <div className="auth-success">
-              <p>✅ Akun berhasil dibuat! Silakan cek email Anda untuk verifikasi, lalu masuk.</p>
+              <p>✅ Akun berhasil dibuat dan terhubung dengan data pegawai Anda! Silakan masuk ke akun Anda.</p>
               <Link className="primary-button" href="/auth/login" style={{ display: "inline-block", marginTop: "1rem" }}>
                 Masuk sekarang
               </Link>
@@ -78,11 +139,28 @@ export default function RegisterPage() {
               {error && <p className="auth-error" role="alert">{error}</p>}
 
               <label className="field">
-                NIP
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>NIP</span>
+                  {isCheckingNip && (
+                    <span style={{ fontSize: "12px", color: "#64748b", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <Loader2 size={12} className="animate-spin" /> Memeriksa...
+                    </span>
+                  )}
+                  {!isCheckingNip && nipStatus === "found" && (
+                    <span style={{ fontSize: "12px", color: "#16a34a", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <CheckCircle2 size={13} /> NIP Valid
+                    </span>
+                  )}
+                  {!isCheckingNip && nipStatus === "notFound" && (
+                    <span style={{ fontSize: "12px", color: "#dc2626", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} /> NIP Tidak Ditemukan
+                    </span>
+                  )}
+                </div>
                 <input
                   autoComplete="off"
                   name="nip"
-                  placeholder="Nomor Induk Pegawai"
+                  placeholder="Masukkan Nomor Induk Pegawai"
                   required
                   value={nip}
                   onChange={(e) => setNip(e.target.value)}
@@ -90,19 +168,41 @@ export default function RegisterPage() {
               </label>
 
               <label className="field">
-                Nama lengkap
+                <span>Nama lengkap</span>
                 <input
                   autoComplete="name"
                   name="nama"
-                  placeholder="Nama Anda"
+                  placeholder={
+                    isCheckingNip
+                      ? "Sedang memeriksa data pegawai..."
+                      : nipStatus === "found"
+                      ? nama
+                      : "Nama otomatis muncul setelah NIP dimasukkan"
+                  }
                   required
+                  readOnly
                   value={nama}
-                  onChange={(e) => setNama(e.target.value)}
+                  style={{
+                    backgroundColor: nama ? "#f8fafc" : "#f1f5f9",
+                    color: nama ? "#0f172a" : "#64748b",
+                    fontWeight: nama ? 600 : 400,
+                    cursor: "not-allowed",
+                  }}
                 />
+                {nipStatus === "found" && nama && (
+                  <span style={{ fontSize: "12px", color: "#16a34a", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <CheckCircle2 size={12} /> Terverifikasi atas nama: <strong>{nama}</strong>
+                  </span>
+                )}
+                {nipStatus === "notFound" && (
+                  <span style={{ fontSize: "12px", color: "#dc2626", marginTop: "2px" }}>
+                    NIP tidak cocok dengan data kepegawaian. Periksa kembali NIP Anda.
+                  </span>
+                )}
               </label>
 
               <label className="field">
-                Email perusahaan
+                <span>Email kantor</span>
                 <input
                   autoComplete="email"
                   name="email"
@@ -115,7 +215,7 @@ export default function RegisterPage() {
               </label>
 
               <label className="field">
-                Kata sandi
+                <span>Kata sandi</span>
                 <div className="password-input-wrap">
                   <input
                     autoComplete="new-password"
@@ -139,7 +239,7 @@ export default function RegisterPage() {
               </label>
 
               <label className="field">
-                Konfirmasi kata sandi
+                <span>Konfirmasi kata sandi</span>
                 <div className="password-input-wrap">
                   <input
                     autoComplete="new-password"
@@ -162,7 +262,7 @@ export default function RegisterPage() {
                 </div>
               </label>
 
-              <button className="primary-button" type="submit" disabled={isSubmitting}>
+              <button className="primary-button" type="submit" disabled={isSubmitting || isCheckingNip}>
                 {isSubmitting ? "Memproses…" : "Buat akun"}
               </button>
             </form>

@@ -115,6 +115,7 @@ export default function ProfilePage() {
 
   // State data pegawai
   const [employee, setEmployee] = useState<ApiEmployee | null>(null);
+  const [loggedUser, setLoggedUser] = useState<{ id?: string; email?: string; nip?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
@@ -157,6 +158,9 @@ export default function ProfilePage() {
       setLoadError(null);
       try {
         const account = await getMyAccount(token);
+        if (account.user) {
+          setLoggedUser(account.user);
+        }
         if (account.employee) {
           setEmployee(account.employee);
         } else {
@@ -276,21 +280,39 @@ export default function ProfilePage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl border border-red-200 shadow-sm p-8 flex flex-col items-center gap-4 text-center"
+              className="bg-white rounded-2xl border border-red-200 shadow-sm p-8 flex flex-col items-center gap-4 text-center max-w-lg mx-auto w-full"
             >
               <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
                 <AlertCircle className="w-7 h-7 text-red-500" />
               </div>
               <div>
                 <h2 className="text-base font-bold text-slate-800 mb-1">Profil Tidak Ditemukan</h2>
-                <p className="text-sm text-slate-500 max-w-sm">{loadError}</p>
+                <p className="text-sm text-slate-500 max-w-sm mb-3">{loadError}</p>
+
+                {loggedUser && (
+                  <div className="text-left bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 mb-2">
+                    <p className="mb-1"><strong>Email Login:</strong> {loggedUser.email || "-"}</p>
+                    <p className="mb-1 font-mono text-[11px] break-all"><strong>UID Akun:</strong> {loggedUser.id || "-"}</p>
+                    <p className="text-[11px] text-slate-400">
+                      Pastikan email login di atas sama dengan kolom <code>email</code> atau User ID sama dengan kolom <code>auth_user_id</code> pada baris pegawai Anda di database.
+                    </p>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={() => router.push("/Homepage")}
-                className="mt-2 px-5 py-2.5 bg-[#3366CC] text-white text-sm font-semibold rounded-xl hover:bg-[#2952a3] transition-colors"
-              >
-                Kembali ke Beranda
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition-colors"
+                >
+                  Coba Muat Ulang
+                </button>
+                <button
+                  onClick={() => router.push("/Homepage")}
+                  className="px-5 py-2 bg-[#3366CC] text-white text-sm font-semibold rounded-xl hover:bg-[#2952a3] transition-colors"
+                >
+                  Kembali ke Beranda
+                </button>
+              </div>
             </motion.div>
           )}
 

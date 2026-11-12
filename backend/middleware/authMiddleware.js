@@ -1,4 +1,5 @@
 const { createClient } = require("@supabase/supabase-js");
+const { supabaseAdmin } = require("../config/supabase");
 
 const authenticate = async (req, res, next) => {
     try {
@@ -44,60 +45,110 @@ const authenticate = async (req, res, next) => {
             }
         );
 
-        // Cari role user
-        const { data: profile, error: profileError } =
-            await supabaseUser
+        // Cari role user di user_profiles menggunakan supabaseUser
+        let role = "user";
+        try {
+            const { data: profile } = await supabaseUser
                 .from("user_profiles")
                 .select("role")
                 .eq("id", user.id)
                 .maybeSingle();
 
-        if (profileError) {
-            console.error("Profile lookup error:", profileError);
+            if (profile?.role) {
+                role = profile.role;
+            } else {
+                // Coba cek dengan supabaseAdmin jika ada
+                const { data: profileAdmin } = await supabaseAdmin
+                    .from("user_profiles")
+                    .select("role")
+                    .eq("id", user.id)
+                    .maybeSingle();
 
-            return res.status(500).json({
-                success: false,
-                message: "Gagal mengambil role user",
-                error: profileError.message
-            });
-        }
-
-        if (!profile) {
-            return res.status(403).json({
-                success: false,
-                message: "Role user belum terdaftar"
-            });
+                if (profileAdmin?.role) {
+                    role = profileAdmin.role;
+                } else {
+                    // Daftarkan role user jika belum ada
+                    await supabaseAdmin
+                        .from("user_profiles")
+                        .upsert({ id: user.id, role: "user" })
+                        .catch(() => null);
+                }
+            }
+        } catch (err) {
+            console.warn("Notice: Gagal query user_profiles, menggunakan role default 'user':", err.message);
         }
 
         // Cari data pegawai berdasarkan auth_user_id
-        let { data: employee, error: employeeError } =
-            await supabaseUser
+        let employee = null;
+
+        // 1. Coba cari dengan supabaseUser
+        try {
+            const { data: empUser } = await supabaseUser
                 .from("employees")
                 .select("*")
                 .eq("auth_user_id", user.id)
                 .maybeSingle();
+            if (empUser) employee = empUser;
+        } catch (_) {}
 
-        // Fallback: Jika belum terhubung auth_user_id, cari berdasarkan email pengguna
-        if (!employee && user.email) {
-            const { data: empByEmail } = await supabaseUser
-                .from("employees")
-                .select("*")
-                .ilike("email", user.email)
-                .maybeSingle();
-
-            if (empByEmail) {
-                employee = empByEmail;
-                // Sinkronkan auth_user_id agar request berikutnya langsung terhubung
-                await supabaseUser
+        // 2. Coba cari dengan supabaseAdmin jika belum ketemu
+        if (!employee) {
+            try {
+                const { data: empAdmin } = await supabaseAdmin
                     .from("employees")
-                    .update({ auth_user_id: user.id })
-                    .eq("id", empByEmail.id);
-            }
+                    .select("*")
+                    .eq("auth_user_id", user.id)
+                    .maybeSingle();
+                if (empAdmin) employee = empAdmin;
+            } catch (_) {}
+        }
+
+        // 3. Fallback: Cari berdasarkan email pengguna jika auth_user_id belum terhubung
+        if (!employee && user.email) {
+            const cleanEmail = user.email.trim();
+            try {
+                const { data: empByEmail } = await supabaseAdmin
+                    .from("employees")
+                    .select("*")
+                    .ilike("email", cleanEmail)
+                    .maybeSingle();
+
+                if (empByEmail) {
+                    employee = empByEmail;
+                    // Tautkan auth_user_id
+                    await supabaseAdmin
+                        .from("employees")
+                        .update({ auth_user_id: user.id })
+                        .eq("id", empByEmail.id);
+                    console.log(`✅ [authMiddleware] Berhasil menautkan pegawai ${empByEmail.nama || empByEmail.nama_lengkap} ke auth_user_id ${user.id}`);
+                }
+            } catch (_) {}
+        }
+
+        // 4. Fallback: Cari berdasarkan NIP di metadata jika ada
+        if (!employee && user.user_metadata?.nip) {
+            const cleanNip = String(user.user_metadata.nip).trim();
+            try {
+                const { data: empByNip } = await supabaseAdmin
+                    .from("employees")
+                    .select("*")
+                    .eq("nip", cleanNip)
+                    .maybeSingle();
+
+                if (empByNip) {
+                    employee = empByNip;
+                    await supabaseAdmin
+                        .from("employees")
+                        .update({ auth_user_id: user.id })
+                        .eq("id", empByNip.id);
+                    console.log(`✅ [authMiddleware] Berhasil menautkan pegawai NIP ${cleanNip} ke auth_user_id ${user.id}`);
+                }
+            } catch (_) {}
         }
 
         // Simpan informasi ke request
         req.user = user;
-        req.role = profile.role;
+        req.role = role;
         req.employee = employee;
         req.accessToken = token;
 

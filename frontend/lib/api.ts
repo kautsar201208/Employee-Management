@@ -189,6 +189,30 @@ export async function loginWithBackend(
   return { accessToken, role };
 }
 
+export async function checkNipFromBackend(nip: string): Promise<{ nip: string; nama: string }> {
+  const cleanNip = nip.trim();
+  if (!cleanNip) {
+    throw new Error("NIP wajib diisi.");
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/auth/check-nip/${encodeURIComponent(cleanNip)}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error("Tidak dapat terhubung ke server untuk memeriksa NIP.");
+  }
+
+  const result = await readApiResponse<{ nip: string; nama: string }>(response);
+  if (!result.data) {
+    throw new Error("Data pegawai tidak ditemukan untuk NIP tersebut.");
+  }
+
+  return result.data;
+}
+
 export async function registerWithBackend(payload: {
   nip: string;
   nama: string;
@@ -456,19 +480,35 @@ export type DocumentItem = {
 
 export type AccountInfo = {
   role: string;
+  user?: {
+    id?: string;
+    email?: string;
+    nip?: string;
+  };
   employee: ApiEmployee | null;
 };
 
 export async function getMyAccount(accessToken: string): Promise<AccountInfo> {
-  const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: "no-store",
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error(`Tidak dapat terhubung ke server backend di ${API_BASE_URL}.`);
+  }
+
   if (res.status === 401) {
     sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-    throw new Error("Sesi login tidak valid.");
+    throw new Error("Sesi login tidak valid. Silakan login kembali.");
   }
+
   const json = await res.json().catch(() => null);
+  if (!res.ok || !json?.success) {
+    throw new Error(json?.message || `Gagal mengambil data akun (Status ${res.status}).`);
+  }
+
   return json?.data || { role: "user", employee: null };
 }
 

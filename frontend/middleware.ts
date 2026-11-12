@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const ROLE_COOKIE = "pusbanglin_role";
@@ -16,14 +16,6 @@ export function middleware(request: NextRequest) {
   if (isProtected && !isLoggedIn) {
     const loginUrl = new URL("/auth/login", request.url);
     return NextResponse.redirect(loginUrl);
-  }
-
-  // ── Biarkan halaman login bisa dibuka meskipun cookie sesi masih tersimpan ──
-  const isRegisterPage = pathname.startsWith("/auth/register");
-
-  if (isRegisterPage && isLoggedIn) {
-    const dest = role === "admin" ? "/dashboard" : "/Homepage/Profile";
-    return NextResponse.redirect(new URL(dest, request.url));
   }
 
   // ── Cegah user biasa masuk ke /dashboard ──
