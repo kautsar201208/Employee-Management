@@ -2,12 +2,12 @@ const { supabase, supabaseAdmin } = require("../config/supabase");
 
 const register = async (req, res) => {
     try {
-        const { nama, email, password } = req.body;
+        const { nip, nama, email, password } = req.body;
 
-        if (!nama || !email || !password) {
+        if (!nip || !nama || !email || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Nama, email, dan password wajib diisi"
+                message: "NIP, nama, email, dan password wajib diisi"
             });
         }
 
@@ -16,6 +16,7 @@ const register = async (req, res) => {
             password,
             options: {
                 data: {
+                    nip,
                     nama
                 }
             }

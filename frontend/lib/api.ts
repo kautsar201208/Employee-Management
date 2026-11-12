@@ -87,11 +87,63 @@ export type AttendanceSummaryInput = {
   forgot_clock_out_count: number;
 };
 
+/** Terjemahkan pesan error dari Supabase/backend ke Bahasa Indonesia */
+function translateAuthError(message: string): string {
+  const msg = message.toLowerCase();
+
+  // Kredensial salah / email tidak terdaftar
+  if (msg.includes("invalid login credentials") || msg.includes("invalid credentials")) {
+    return "Email atau kata sandi salah. Periksa kembali dan coba lagi.";
+  }
+  // Email tidak ditemukan
+  if (msg.includes("user not found") || msg.includes("no user found")) {
+    return "Email tidak terdaftar. Periksa kembali atau daftar akun baru.";
+  }
+  // Email sudah terdaftar saat register
+  if (msg.includes("user already registered") || msg.includes("email already") || msg.includes("already been registered")) {
+    return "Email ini sudah terdaftar. Silakan masuk atau gunakan email lain.";
+  }
+  // Password terlalu pendek
+  if (msg.includes("password should be at least") || msg.includes("password must be")) {
+    return "Kata sandi terlalu pendek. Minimal 8 karakter.";
+  }
+  // Email tidak valid
+  if (msg.includes("invalid email") || msg.includes("unable to validate email")) {
+    return "Format email tidak valid. Periksa kembali alamat email Anda.";
+  }
+  // Terlalu banyak percobaan
+  if (msg.includes("too many requests") || msg.includes("rate limit") || msg.includes("email rate limit")) {
+    return "Terlalu banyak percobaan. Tunggu beberapa saat sebelum mencoba lagi.";
+  }
+  // Token/sesi kadaluarsa
+  if (msg.includes("token expired") || msg.includes("token has expired") || msg.includes("jwt expired")) {
+    return "Sesi login telah berakhir. Silakan masuk kembali.";
+  }
+  // Token tidak valid
+  if (msg.includes("invalid token") || msg.includes("invalid jwt") || msg.includes("malformed")) {
+    return "Tautan tidak valid atau sudah kedaluwarsa. Silakan minta tautan baru.";
+  }
+  // Email belum diverifikasi
+  if (msg.includes("email not confirmed") || msg.includes("email link is invalid or has expired")) {
+    return "Email belum diverifikasi. Silakan cek inbox email Anda.";
+  }
+  // Koneksi / server error
+  if (msg.includes("network") || msg.includes("fetch") || msg.includes("econnrefused")) {
+    return "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.";
+  }
+  if (msg.includes("terjadi kesalahan pada server") || msg.includes("internal server error") || msg.includes("500")) {
+    return "Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.";
+  }
+  // Sudah ada terjemahan Indonesia — kembalikan apa adanya
+  return message;
+}
+
 async function readApiResponse<T>(response: Response): Promise<ApiResponse<T>> {
   const result = await response.json().catch(() => null) as ApiResponse<T> | null;
 
   if (!response.ok || !result?.success) {
-    throw new Error(result?.message || `Permintaan gagal (${response.status})`);
+    const raw = result?.message || `Permintaan gagal (${response.status})`;
+    throw new Error(translateAuthError(raw));
   }
 
   return result;
@@ -110,7 +162,7 @@ export async function loginWithBackend(
       body: JSON.stringify({ email, password }),
     });
   } catch {
-    throw new Error(`Backend tidak dapat dihubungi di ${API_BASE_URL}.`);
+    throw new Error("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
   }
 
   const result = await readApiResponse<{ role?: string }>(response);
@@ -135,6 +187,25 @@ export async function loginWithBackend(
   }
 
   return { accessToken, role };
+}
+
+export async function registerWithBackend(payload: {
+  nip: string;
+  nama: string;
+  email: string;
+  password: string;
+}): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new Error("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
+  }
+  await readApiResponse(response);
 }
 
 export async function getEmployees(accessToken: string, signal?: AbortSignal): Promise<ApiEmployee[]> {
